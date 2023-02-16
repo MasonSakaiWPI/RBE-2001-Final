@@ -21,11 +21,21 @@ Ultrasonic sonar;
 BlueMotor blueMotor;
 ClampMotor clampMotor;
 
-int pos = ADCMAX / 2;
+int pos = ADCMAX / 2,
+    bme = 0;
 
 bool checkRemote() {
   switch (decoder.getKeyCode())
   {
+  case ENTER_SAVE:
+    bme = 0;
+    break;
+  case UP_ARROW:
+    bme += 50;
+    break;
+  case DOWN_ARROW:
+    bme -= 50;
+    break;
   case NUM_0_10:
     pos = 0;
     break;
@@ -73,23 +83,33 @@ void setup() {
   pinMode(20, INPUT);
   pinMode(21, INPUT);
   pinMode(22, INPUT);
+
+  sonar.start();
 }
 
 void loop() {
-  if(readBatteryMillivolts() < 6500 && readBatteryMillivolts() > 100) {
+  if(readBatteryMillivolts() < 6500 && readBatteryMillivolts() > 1000) {
     blueMotor.setEffort(0);
     clampMotor.setEffort(0);
     sonar.stop();
-    tone(6, 200);
+    tone(6, 500);
     return;
   }
 
   sonar.update();
+  /*Serial.print(sonar.getDistance());
+  Serial.print("\t");*/
 
   checkRemote();
-  clampMotor.moveTo(pos);
+
+  if(clampMotor.moveTo(pos) == 2) {
+    Serial.println(clampMotor.getPosition());
+    pos = clampMotor.getPosition();
+  }
   
-  Serial.print(pos);
+  /*Serial.print(pos);
   Serial.print("\t");
-  Serial.println(analogRead(0));
+  Serial.println(analogRead(0));*/
+
+  blueMotor.setEffort(bme);
 }

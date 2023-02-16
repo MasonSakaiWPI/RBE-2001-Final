@@ -2,6 +2,12 @@
 #include "ClampMotor.h"
 #include <Romi32U4.h>
 
+unsigned const int LUTTimeout = 1000,
+          LUTThreshold = 8;
+int lastUpdatedPosition = 0,
+    lastTarget = -1;
+unsigned long lastUpdatedTime = 0;
+
 ClampMotor::ClampMotor()
 {
 }
@@ -20,6 +26,8 @@ long ClampMotor::getPosition()
 void ClampMotor::reset()
 {
     servo.detach();
+    lastUpdatedPosition = getPosition();
+    lastUpdatedTime = millis();
 }
 
 void ClampMotor::setEffortWithDeadband(int effort)
@@ -43,8 +51,14 @@ void ClampMotor::setEffort(int effort)
     }
 }
 
-bool ClampMotor::moveTo(int target)
+byte ClampMotor::moveTo(int target)
 {
+    if(target != lastTarget) {
+        lastTarget = target;
+        lastUpdatedPosition = getPosition();
+        lastUpdatedTime = millis();
+    }
+
     target = constrain(target, 0, ADCMAX);
     int pos = getPosition();
     int deltaP = target - pos;
@@ -53,8 +67,23 @@ bool ClampMotor::moveTo(int target)
     Serial.println(deltaP * kp);*/
     if(abs(deltaP) < tolerance || (deltaP * kp > 0 && pos == 0) || (deltaP * kp < 0 && pos > 1020)) {
         setEffort(0);
-        return true;
+        return 1;
+    } else if(abs(lastUpdatedPosition - pos) > LUTThreshold) {
+        lastUpdatedPosition = pos;
+        if(deltaP > 0) lastUpdatedPosition -= LUTThreshold / 2;
+        else lastUpdatedPosition += LUTThreshold / 2;
+        lastUpdatedTime = millis();
+        Serial.print(lastUpdatedPosition);
+        Serial.print("\t");
+        Serial.print(target);
+        Serial.print("\t");
+        Serial.println(pos);
+    }
+    else if(lastUpdatedTime + LUTTimeout < millis()) {
+        Serial.print("Hit at ");
+        Serial.println(pos);
+        return 2;
     }
     setEffortWithDeadband(deltaP * kp);
-    return false;
+    return 0;
 }

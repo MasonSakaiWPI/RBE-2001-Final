@@ -6,6 +6,7 @@ struct Ultrasonic {
     void start();
     void stop();
     void update();
-    
+
+    bool isActive();
     float getDistance();
 };

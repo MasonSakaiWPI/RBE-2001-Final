@@ -7,11 +7,13 @@ const byte  pinSonarTrig = 12,
 
 const float microsToDistance = 0.01715f;
 const unsigned long waitPeriod = 1000,
-                    timeoutPeriod = 10000;
+                    timeoutPeriod = 100000;
 
 unsigned long sonarOut = 0,
             lastSonarTime = 0,
             sonarWaitStart = 0;
+
+float distance;
 
 bool active = false;
 bool pinged = false;
@@ -29,6 +31,7 @@ void echo() {
         return;
     }
     lastSonarTime = micros() - sonarOut;
+    distance = lastSonarTime * microsToDistance;
     sonarWaitStart = micros();
     pinged = false;
 }
@@ -39,6 +42,7 @@ void Setup() {
   pinMode(17, INPUT);
 
   attachPCInt(0, echo);
+  ping();
 }
 void Ultrasonic::setup() { Setup(); }
 
@@ -50,6 +54,10 @@ void Stop() {
     active = false;
 }
 void Ultrasonic::stop() { Stop(); }
+bool IsActive() {
+    return active;
+}
+bool Ultrasonic::isActive() { return IsActive(); }
 
 void Update() {
     if(active) {
@@ -63,7 +71,6 @@ void Update() {
 void Ultrasonic::update() { Update(); }
 
 float GetDistance() {
-    if(!active) return -1;
-    return lastSonarTime * microsToDistance;
+    return distance;
 }
 float Ultrasonic::getDistance() { return GetDistance(); }

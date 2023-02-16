@@ -9,7 +9,7 @@ public:
     ClampMotor();
     void setEffort(int effort);
     void setEffortWithDeadband(int effort);
-    bool moveTo(int position);
+    byte moveTo(int position);
     long getPosition();
     void setup();
     void reset();
@@ -17,7 +17,7 @@ public:
 private:
     const int tolerance = 5;
     const int kp = -10;
-    const int Deadband = 0;
+    const int Deadband = 300;
     const int neutral = 1500;
     Servo32U4Pin5 servo;
 };
