@@ -7,7 +7,7 @@ class BlueMotor
 public:
     BlueMotor();
     void setEffort(int effort);
-    void setEffortWithDeadband(int effort);
+    int setEffortWithDeadband(int effort);
     bool moveTo(long position);
     long getPosition();
     void reset();
@@ -15,7 +15,7 @@ public:
 
 private:
     void setEffort(int effort, bool clockwise);
-    void setEffortWithDeadband(int effort, bool clockwise);
+    int setEffortWithDeadband(int effort, bool clockwise);
     static void isrA();
     static void isrB();
     const int tolerance = 10;

@@ -59,17 +59,18 @@ void BlueMotor::isrB()
     else count--;
 }
 
-void BlueMotor::setEffortWithDeadband(int effort)
+int BlueMotor::setEffortWithDeadband(int effort)
 {
-    if (effort < 0) setEffortWithDeadband(-effort, true);
-    else            setEffortWithDeadband(effort, false);
+    if (effort < 0) return setEffortWithDeadband(-effort, true);
+    else            return setEffortWithDeadband(effort, false);
 }
 
-void BlueMotor::setEffortWithDeadband(int effort, bool clockwise)
+int BlueMotor::setEffortWithDeadband(int effort, bool clockwise)
 {
     if(effort != 0)
         effort = effort * ((400.0f - Deadband) / 400.0f) + Deadband;
     setEffort(effort, clockwise);
+    return effort;
 }
 
 

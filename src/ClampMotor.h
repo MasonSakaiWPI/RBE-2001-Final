@@ -15,7 +15,7 @@ public:
     void reset();
 
 private:
-    const int tolerance = 5;
+    const int tolerance = 8;
     const int kp = -10;
     const int Deadband = 300;
     const int neutral = 1500;

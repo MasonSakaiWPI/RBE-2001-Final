@@ -73,15 +73,15 @@ byte ClampMotor::moveTo(int target)
         if(deltaP > 0) lastUpdatedPosition -= LUTThreshold / 2;
         else lastUpdatedPosition += LUTThreshold / 2;
         lastUpdatedTime = millis();
-        Serial.print(lastUpdatedPosition);
+        /*Serial.print(lastUpdatedPosition);
         Serial.print("\t");
         Serial.print(target);
         Serial.print("\t");
-        Serial.println(pos);
+        Serial.println(pos);*/
     }
     else if(lastUpdatedTime + LUTTimeout < millis()) {
-        Serial.print("Hit at ");
-        Serial.println(pos);
+        //Serial.print("Hit at ");
+        //Serial.println(pos);
         return 2;
     }
     setEffortWithDeadband(deltaP * kp);

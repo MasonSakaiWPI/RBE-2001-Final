@@ -21,12 +21,23 @@ Ultrasonic sonar;
 BlueMotor blueMotor;
 ClampMotor clampMotor;
 
-int pos = ADCMAX / 2,
-    bme = 0;
+int pos = 300;
+float bme = 0;
+
+bool dbtestactive = false;
+
+const long targetLow = -1000,
+           targetHigh = -2729,
+           targetGround = 400;
+
 
 bool checkRemote() {
   switch (decoder.getKeyCode())
   {
+  case PLAY_PAUSE:
+    dbtestactive = !dbtestactive;
+    if(dbtestactive) blueMotor.reset();
+    break;
   case ENTER_SAVE:
     bme = 0;
     break;
@@ -36,35 +47,30 @@ bool checkRemote() {
   case DOWN_ARROW:
     bme -= 50;
     break;
-  case NUM_0_10:
+    
+  case SETUP_BTN:
+    blueMotor.reset();
+    break;
+  case STOP_MODE:
+    Serial.println(blueMotor.getPosition());
+    Serial.println(clampMotor.getPosition());
+    break;
+
+  case REWIND:
+    blueMotor.reset();
+    break;
+
+  case NUM_1:
     pos = 0;
     break;
-  case NUM_1:
-    pos = ADCMAX / 9;
-    break;
   case NUM_2:
-    pos = ADCMAX * 2 / 9;
+    pos = 80;
     break;
   case NUM_3:
-    pos = ADCMAX / 3;
+    pos = 300;
     break;
-  case NUM_4:
-    pos = ADCMAX * 4 / 9;
-    break;
-  case NUM_5:
-    pos = ADCMAX * 5 / 9;
-    break;
-  case NUM_6:
-    pos = ADCMAX * 2 / 3;
-    break;
-  case NUM_7:
-    pos = ADCMAX * 7 / 9;
-    break;
-  case NUM_8:
-    pos = ADCMAX * 8 / 9;
-    break;
-  case NUM_9:
-    pos = ADCMAX;
+  case NUM_0_10:
+    pos = 700;
     break;
   default:
     return false;
@@ -87,14 +93,17 @@ void setup() {
   sonar.start();
 }
 
+int lastEffort = 0;
+
 void loop() {
-  if(readBatteryMillivolts() < 6500 && readBatteryMillivolts() > 1000) {
+  if(readBatteryMillivolts() < 6500 && readBatteryMillivolts() > 5000) {
+    Serial.println(readBatteryMillivolts());
     blueMotor.setEffort(0);
     clampMotor.setEffort(0);
     sonar.stop();
     tone(6, 500);
     return;
-  }
+  } else noTone(6);
 
   sonar.update();
   /*Serial.print(sonar.getDistance());
@@ -111,5 +120,23 @@ void loop() {
   Serial.print("\t");
   Serial.println(analogRead(0));*/
 
-  blueMotor.setEffort(bme);
+  if(dbtestactive && abs(blueMotor.getPosition()) < 100) {
+    //blueMotor.setEffort(bme);
+    bme -= .1f;
+    Serial.print(bme);
+    Serial.print("\t");
+    Serial.println(blueMotor.getPosition());
+  } else if (dbtestactive) {
+    dbtestactive = false; bme = 0;
+  }
+  int dbeffort = 0; blueMotor.setEffort(bme);
+  /*if((int)bme != lastEffort) {
+        Serial.print(millis());
+        Serial.print("\t");
+        Serial.print((int)bme);
+        Serial.print("\t");
+        Serial.print(dbeffort);
+        Serial.print("\t");
+        Serial.println(blueMotor.getPosition());
+  }*/
 }
