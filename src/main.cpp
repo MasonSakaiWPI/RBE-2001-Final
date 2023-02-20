@@ -21,19 +21,24 @@ Ultrasonic sonar;
 BlueMotor blueMotor;
 ClampMotor clampMotor;
 
-int pos = 300;
+int clampPos = 300,
+    blueMotorPos = 0;
 float bme = 0;
 
-bool dbtestactive = false;
+bool dbtestactive = false,
+     blueMotorPosMode = false;
 
-const long targetLow = -1000,
-           targetHigh = -2729,
-           targetGround = 400;
+const long targetLow = -1500,  //45d position
+           targetLow2 = -1700, // raises plate
+           targetHigh = -3250,  //25d position
+           targetHigh2 = -1500, // raises plate
+           targetHighLower = -500, // past point of drop
+           targetSonar = -1250; //min for clear of sonar
 
 
 bool checkRemote() {
   switch (decoder.getKeyCode())
-  {
+  { //Everything here is for testing purposes
   case PLAY_PAUSE:
     dbtestactive = !dbtestactive;
     if(dbtestactive) blueMotor.reset();
@@ -52,26 +57,54 @@ bool checkRemote() {
     blueMotor.reset();
     break;
   case STOP_MODE:
+    Serial.print("Blue Motor Encoder: ");
     Serial.println(blueMotor.getPosition());
+    Serial.print("Clamp Linear Pot: ");
     Serial.println(clampMotor.getPosition());
     break;
 
-  case REWIND:
-    blueMotor.reset();
-    break;
-
   case NUM_1:
-    pos = 0;
+    clampPos = 0;
     break;
   case NUM_2:
-    pos = 80;
+    clampPos = 80;
     break;
   case NUM_3:
-    pos = 300;
+    clampPos = 300;
     break;
   case NUM_0_10:
-    pos = 700;
+    clampPos = 700;
     break;
+    
+  case LEFT_ARROW:
+    blueMotorPosMode = false;
+    break;
+  case RIGHT_ARROW:
+    blueMotorPosMode = true;
+    break;
+    
+  case REWIND:
+    blueMotorPos = targetHighLower;
+    break;
+  case NUM_4:
+    blueMotorPos = 0;
+    break;
+  case NUM_7:
+    blueMotorPos = targetSonar;
+    break;
+  case NUM_5:
+    blueMotorPos = targetLow;
+    break;
+  case NUM_8:
+    blueMotorPos = targetLow2;
+    break;
+  case NUM_6:
+    blueMotorPos = targetHigh;
+    break;
+  case NUM_9:
+    blueMotorPos = targetHigh2;
+    break;
+
   default:
     return false;
   }
@@ -86,9 +119,11 @@ void setup() {
   blueMotor.setup();
   clampMotor.setup();
 
-  pinMode(20, INPUT);
-  pinMode(21, INPUT);
-  pinMode(22, INPUT);
+  //https://www.pololu.com/category/123/pololu-qtr-reflectance-sensors
+  //Specific sensor: https://www.pololu.com/product/4246
+  pinMode(20, INPUT); //Analog 2, sensor 11
+  pinMode(21, INPUT); //Analog 3, sensor 9
+  pinMode(22, INPUT); //Analog 4, sensor 7
 
   sonar.start();
 }
@@ -96,6 +131,7 @@ void setup() {
 int lastEffort = 0;
 
 void loop() {
+  //Battery check, stops everything and enables buzzer
   if(readBatteryMillivolts() < 6500 && readBatteryMillivolts() > 5000) {
     Serial.println(readBatteryMillivolts());
     blueMotor.setEffort(0);
@@ -105,21 +141,23 @@ void loop() {
     return;
   } else noTone(6);
 
-  sonar.update();
+  sonar.update(); //Update Sonar
   /*Serial.print(sonar.getDistance());
   Serial.print("\t");*/
 
   checkRemote();
 
-  if(clampMotor.moveTo(pos) == 2) {
+  // Clamp move to
+  if(clampMotor.moveTo(clampPos) == 2) {
     Serial.println(clampMotor.getPosition());
-    pos = clampMotor.getPosition();
+    clampPos = clampMotor.getPosition();
   }
   
   /*Serial.print(pos);
   Serial.print("\t");
   Serial.println(analogRead(0));*/
 
+  // Blue motor test
   if(dbtestactive && abs(blueMotor.getPosition()) < 100) {
     //blueMotor.setEffort(bme);
     bme -= .1f;
@@ -129,7 +167,12 @@ void loop() {
   } else if (dbtestactive) {
     dbtestactive = false; bme = 0;
   }
-  int dbeffort = 0; blueMotor.setEffort(bme);
+
+  //Swaps between move to and direct effort control
+  if(blueMotorPosMode) blueMotor.moveTo(blueMotorPos);
+  else blueMotor.setEffort(bme);
+
+  // I have no idea what this is but I'm not removing it yet
   /*if((int)bme != lastEffort) {
         Serial.print(millis());
         Serial.print("\t");

@@ -25,5 +25,5 @@ private:
     const int ENCA = 0;
     const int ENCB = 1;
     const int kp = 16;
-    const int Deadband = 0;
+    const int Deadband = 320;
 };
