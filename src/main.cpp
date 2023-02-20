@@ -119,6 +119,19 @@ bool checkRemote() {
   return true;
 }
 
+bool batteryCheck() {
+  //Battery check, stops everything and enables buzzer
+  if(readBatteryMillivolts() < 6500 && readBatteryMillivolts() > 5000) {
+    Serial.println(readBatteryMillivolts());
+    blueMotor.setEffort(0);
+    clampMotor.setEffort(0);
+    tone(6, 500);
+    return false;
+  }
+  noTone(6);
+  return true;
+}
+
 void setup() {
   Serial.begin(9600);
   
@@ -147,15 +160,7 @@ long deltaPos;
 const float ToRPM = 60000.0f / CountsPerRotation;
 
 void loop() {
-  //Battery check, stops everything and enables buzzer
-  if(readBatteryMillivolts() < 6500 && readBatteryMillivolts() > 5000) {
-    Serial.println(readBatteryMillivolts());
-    blueMotor.setEffort(0);
-    clampMotor.setEffort(0);
-    sonar.stop();
-    tone(6, 500);
-    return;
-  } else noTone(6);
+  if(!batteryCheck()) return;
 
   sonar.update(); //Update Sonar
 
