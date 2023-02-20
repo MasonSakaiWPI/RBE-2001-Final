@@ -21,12 +21,12 @@ Ultrasonic sonar;
 BlueMotor blueMotor;
 ClampMotor clampMotor;
 
-int clampPos = 300,
-    blueMotorPos = 0;
-float bme = 0;
+int clampPos = 300, //Clamp target position
+    blueMotorPos = 0; //Blue Motor target position
+float bme = 0; //Blue motor manual effort
 
-bool dbtestactive = false,
-     blueMotorPosMode = false;
+bool dbtestactive = false, //Dead band test active
+     blueMotorPosMode = false; //Use BME (false) or blueMotorPos(true)
 
 const long targetLow = -1500,  //45d position
            targetLow2 = -1700, // raises plate
@@ -121,6 +121,7 @@ void setup() {
 
   //https://www.pololu.com/category/123/pololu-qtr-reflectance-sensors
   //Specific sensor: https://www.pololu.com/product/4246
+
   pinMode(20, INPUT); //Analog 2, sensor 11
   pinMode(21, INPUT); //Analog 3, sensor 9
   pinMode(22, INPUT); //Analog 4, sensor 7
