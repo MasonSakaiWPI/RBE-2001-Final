@@ -7,5 +7,6 @@ class ReflectanceSensor
         int readLeft();
         int readFarLeft();
         int readRight();
+        bool farLeftOverLine();
     private:
 };

@@ -167,9 +167,6 @@ void loop() {
   if(!batteryCheck()) return;
   sonar.update(); //Update Sonar
   checkRemote();
-  Serial.println(reflectanceSensor.readFarLeft());
-  Serial.println(reflectanceSensor.readLeft());
-  Serial.println(reflectanceSensor.readRight());
 
   switch(robotState)
   {

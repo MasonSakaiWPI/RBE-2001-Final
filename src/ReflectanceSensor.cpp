@@ -22,6 +22,10 @@ int ReflectanceSensor::readFarLeft()
 {
     return analogRead(FARLEFTPIN);
 }
+bool ReflectanceSensor::farLeftOverLine()
+{
+    return readFarLeft() > 200;
+}
 int ReflectanceSensor::readLeft()
 {
     return analogRead(LEFTPIN);
