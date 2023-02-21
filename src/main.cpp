@@ -36,6 +36,10 @@ const long targetLow = -1500,  //45d position
            targetHigh2 = -1500, // raises plate
            targetHighLower = -500, // past point of drop
            targetSonar = -1250; //min for clear of sonar
+const float sonarPickup = 10.2,
+            sonar45 = 13.2,
+            sonar25 = 8.3;
+
 
 
 bool checkRemote() {
@@ -63,6 +67,10 @@ bool checkRemote() {
     Serial.println(blueMotor.getPosition());
     Serial.print("Clamp Linear Pot: ");
     Serial.println(clampMotor.getPosition());
+    Serial.print("Sonar Dist: ");
+    Serial.println(sonar.getDistance());
+    Serial.print("Line: ");
+    Serial.println(analogRead(3));
     break;
 
   case NUM_1:
@@ -113,6 +121,19 @@ bool checkRemote() {
   return true;
 }
 
+bool batteryCheck() {
+  //Battery check, stops everything and enables buzzer
+  if(readBatteryMillivolts() < 6500 && readBatteryMillivolts() > 5000) {
+    Serial.println(readBatteryMillivolts());
+    blueMotor.setEffort(0);
+    clampMotor.setEffort(0);
+    tone(6, 500);
+    return false;
+  }
+  noTone(6);
+  return true;
+}
+
 void setup() {
   Serial.begin(9600);
   
@@ -129,22 +150,19 @@ void setup() {
   sonar.start();
 }
 
-int lastEffort = 0;
+long timeToPrint = 0;
+long now = 0;
+long newPosition = 0;
+long oldPosition = 0;
+long sampleTime = 100;
+float speedInRPM = 0;
+long deltaPos;
+const float ToRPM = 60000.0f / CountsPerRotation;
 
 void loop() {
-  //Battery check, stops everything and enables buzzer
-  if(readBatteryMillivolts() < 6500 && readBatteryMillivolts() > 5000) {
-    Serial.println(readBatteryMillivolts());
-    blueMotor.setEffort(0);
-    clampMotor.setEffort(0);
-    sonar.stop();
-    tone(6, 500);
-    return;
-  } else noTone(6);
+  if(!batteryCheck()) return;
 
   sonar.update(); //Update Sonar
-  /*Serial.print(sonar.getDistance());
-  Serial.print("\t");*/
 
   checkRemote();
 
@@ -153,34 +171,28 @@ void loop() {
     Serial.println(clampMotor.getPosition());
     clampPos = clampMotor.getPosition();
   }
-  
-  /*Serial.print(pos);
-  Serial.print("\t");
-  Serial.println(analogRead(0));*/
-
-  // Blue motor test
-  if(dbtestactive && abs(blueMotor.getPosition()) < 100) {
-    //blueMotor.setEffort(bme);
-    bme -= .1f;
-    Serial.print(bme);
-    Serial.print("\t");
-    Serial.println(blueMotor.getPosition());
-  } else if (dbtestactive) {
-    dbtestactive = false; bme = 0;
-  }
 
   //Swaps between move to and direct effort control
   if(blueMotorPosMode) blueMotor.moveTo(blueMotorPos);
   else blueMotor.setEffort(bme);
 
-  // I have no idea what this is but I'm not removing it yet
-  /*if((int)bme != lastEffort) {
-        Serial.print(millis());
-        Serial.print("\t");
-        Serial.print((int)bme);
-        Serial.print("\t");
-        Serial.print(dbeffort);
-        Serial.print("\t");
-        Serial.println(blueMotor.getPosition());
-  }*/
+  // Blue motor test
+  if(dbtestactive && abs(blueMotor.getPosition()) < 100) {
+    bme -= .1f;
+    if ((now = millis()) > timeToPrint)
+    {
+      timeToPrint = now + sampleTime;
+      newPosition = blueMotor.getPosition();
+      deltaPos = newPosition - oldPosition;
+      speedInRPM = ((float)deltaPos / (float)sampleTime) * ToRPM;
+      Serial.print(bme);
+      Serial.print("          ");
+      Serial.print(blueMotor.setEffortWithDeadband(bme));
+      Serial.print("          ");
+      Serial.println(speedInRPM);
+      oldPosition = newPosition;
+    }
+  } else if (dbtestactive) {
+    dbtestactive = false; bme = 0;
+  }
 }
