@@ -4,7 +4,8 @@ class ReflectanceSensor
     public:
         ReflectanceSensor();
         void setup();
-        int* readSensor();
+        int readLeft();
+        int readCenter();
+        int readRight();
     private:
-        static int readings[3];
 };
