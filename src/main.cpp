@@ -8,6 +8,7 @@
 #include <ir_codes.h>
 
 #include "Ultrasonic.h"
+#include "ReflectanceSensor.h"
 
 #include "BlueMotor.h"
 #include "ClampMotor.h"
@@ -17,6 +18,7 @@ Romi32U4ButtonB buttonB;
 IRDecoder decoder(14);
 
 Ultrasonic sonar;
+ReflectanceSensor reflectanceSensor;
 
 BlueMotor blueMotor;
 ClampMotor clampMotor;
@@ -143,9 +145,7 @@ void setup() {
   //https://www.pololu.com/category/123/pololu-qtr-reflectance-sensors
   //Specific sensor: https://www.pololu.com/product/4246
 
-  pinMode(20, INPUT); //Analog 2, sensor 11
-  pinMode(21, INPUT); //Analog 3, sensor 7
-  pinMode(22, INPUT); //Analog 4, sensor 3
+  reflectanceSensor.setup();
 
   sonar.start();
 }
