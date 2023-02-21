@@ -22,8 +22,9 @@ ReflectanceSensor reflectanceSensor;
 
 BlueMotor blueMotor;
 ClampMotor clampMotor;
+Chassis chassis;
 
-enum robotStates {Idle, LineFollowing, CollectingPanel, DepositingPanel};
+enum robotStates {Idle, ApproachingRoof25, ApproachingRoof45, ApproachingStagingArea, PlacingRoof25, PlacingRoof45, PlacingStagingArea, RemovingRoof25, RemovingRoof45};
 int robotState;
 
 int clampPos = 300, //Clamp target position
@@ -137,9 +138,16 @@ bool batteryCheck() {
   return true;
 }
 
+void followLine(int effort) {
+  //on line 400
+  //off line 50
+}
+
 void setup() {
   Serial.begin(9600);
   
+  chassis.init();
+
   decoder.init();
   sonar.setup();
   blueMotor.setup();
@@ -154,14 +162,16 @@ void setup() {
   robotState = Idle;
 }
 
+//for lab
 long timeToPrint = 0;
 long now = 0;
 long newPosition = 0;
 long oldPosition = 0;
-long sampleTime = 100;
+long sampleTime = 50;
 float speedInRPM = 0;
 long deltaPos;
 const float ToRPM = 60000.0f / CountsPerRotation;
+//end of for lab
 
 void loop() {
   if(!batteryCheck()) return;
@@ -170,13 +180,9 @@ void loop() {
 
   switch(robotState)
   {
-    case Idle:
+    case Idle: //waiting for IR remote command
     break;
-    case LineFollowing:
-    break;
-    case DepositingPanel:
-    break;
-    case CollectingPanel:
+    case ApproachingRoof25:
     break;
   }
 
@@ -191,7 +197,7 @@ void loop() {
   if(blueMotorPosMode) blueMotor.moveTo(blueMotorPos);
   else blueMotor.setEffort(bme);
 
-  // Blue motor test
+  // Blue motor test; for lab
   if(dbtestactive && abs(blueMotor.getPosition()) < 100) {
     bme -= .1f;
     if ((now = millis()) > timeToPrint)
@@ -201,9 +207,9 @@ void loop() {
       deltaPos = newPosition - oldPosition;
       speedInRPM = ((float)deltaPos / (float)sampleTime) * ToRPM;
       Serial.print(bme);
-      Serial.print("          ");
+      Serial.print(", ");
       Serial.print(blueMotor.setEffortWithDeadband(bme));
-      Serial.print("          ");
+      Serial.print(", ");
       Serial.println(speedInRPM);
       oldPosition = newPosition;
     }
