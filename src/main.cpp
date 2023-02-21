@@ -23,6 +23,8 @@ ReflectanceSensor reflectanceSensor;
 BlueMotor blueMotor;
 ClampMotor clampMotor;
 
+String robotState;
+
 int clampPos = 300, //Clamp target position
     blueMotorPos = 0; //Blue Motor target position
 float bme = 0; //Blue motor manual effort
@@ -148,6 +150,7 @@ void setup() {
   reflectanceSensor.setup();
 
   sonar.start();
+  robotState = "IDLE";
 }
 
 long timeToPrint = 0;
@@ -161,10 +164,25 @@ const float ToRPM = 60000.0f / CountsPerRotation;
 
 void loop() {
   if(!batteryCheck()) return;
-
   sonar.update(); //Update Sonar
-
   checkRemote();
+  if(robotState == "IDLE")
+  {
+
+  }
+  else if (robotState == "LINEFOLLOWING")
+  {
+
+  }
+  else if (robotState == "REMOVINGPANEL")
+  {
+
+  }
+  else if (robotState == "DEPOSITINGPANEL")
+  {
+    
+  }
+
 
   // Clamp move to
   if(clampMotor.moveTo(clampPos) == 2) {
