@@ -5,7 +5,7 @@ class ReflectanceSensor
         ReflectanceSensor();
         void setup();
         int readLeft();
-        int readCenter();
+        int readFarLeft();
         int readRight();
     private:
 };
