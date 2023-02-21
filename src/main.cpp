@@ -141,6 +141,10 @@ bool batteryCheck() {
 void followLine(int effort) {
   //on line 400
   //off line 50
+  int left = reflectanceSensor.readLeft();
+  int right = reflectanceSensor.readRight();
+  int delta = (left-right)/20;
+  chassis.setMotorEfforts(effort+delta, effort-delta);
 }
 
 void setup() {
@@ -177,7 +181,7 @@ void loop() {
   if(!batteryCheck()) return;
   sonar.update(); //Update Sonar
   checkRemote();
-
+  followLine(100);
   switch(robotState)
   {
     case Idle: //waiting for IR remote command
