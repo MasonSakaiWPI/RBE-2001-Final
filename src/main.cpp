@@ -23,7 +23,8 @@ ReflectanceSensor reflectanceSensor;
 BlueMotor blueMotor;
 ClampMotor clampMotor;
 
-String robotState;
+enum robotStates {Idle, LineFollowing, CollectingPanel, DepositingPanel};
+int robotState;
 
 int clampPos = 300, //Clamp target position
     blueMotorPos = 0; //Blue Motor target position
@@ -150,7 +151,7 @@ void setup() {
   reflectanceSensor.setup();
 
   sonar.start();
-  robotState = "IDLE";
+  robotState = Idle;
 }
 
 long timeToPrint = 0;
@@ -166,21 +167,16 @@ void loop() {
   if(!batteryCheck()) return;
   sonar.update(); //Update Sonar
   checkRemote();
-  if(robotState == "IDLE")
+  switch(robotState)
   {
-
-  }
-  else if (robotState == "LINEFOLLOWING")
-  {
-
-  }
-  else if (robotState == "REMOVINGPANEL")
-  {
-
-  }
-  else if (robotState == "DEPOSITINGPANEL")
-  {
-    
+    case Idle:
+    break;
+    case LineFollowing:
+    break;
+    case DepositingPanel:
+    break;
+    case CollectingPanel:
+    break;
   }
 
 
