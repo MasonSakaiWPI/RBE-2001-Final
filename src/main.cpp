@@ -24,8 +24,9 @@ BlueMotor blueMotor;
 ClampMotor clampMotor;
 Chassis chassis;
 
-enum robotStates {Idle, ApproachingRoof25, ApproachingRoof45, ApproachingStagingArea, PlacingRoof25, PlacingRoof45, PlacingStagingArea, RemovingRoof25, RemovingRoof45};
+enum robotStates {Idle, ApproachingRoof, ApproachingStagingArea, PlacingRoof, PlacingStagingArea, RemovingRoof};
 int robotState;
+int roofState = 45; //this stores which side of the field the robot is on based on the roof angle
 
 int clampPos = 300, //Clamp target position
     blueMotorPos = 0; //Blue Motor target position
@@ -139,12 +140,42 @@ bool batteryCheck() {
 }
 
 void followLine(int effort) {
-  //on line 400
-  //off line 50
   int left = reflectanceSensor.readLeft();
   int right = reflectanceSensor.readRight();
   int delta = (left-right)/20;
   chassis.setMotorEfforts(effort+delta, effort-delta);
+}
+void approachRoof()//this needs work
+{
+  Serial.print("sonar: ");
+  Serial.println(sonar.getDistance());
+  int effort = -100;
+  float delta;
+  if(roofState == 45)
+  {
+    delta = (sonar.getDistance()-sonar45);
+   if(delta>0)
+   {
+    effort = effort*delta;
+    //if(abs(effort)<50) {effort=50*(effort>0?1:-1);}
+    if(abs(effort)>200) {effort=200*(effort>0?1:-1);} //efort hard cap so it doesnt ram
+    Serial.print("effort: ");
+    Serial.println(effort);
+    chassis.setMotorEfforts(effort, effort);
+   }
+   else
+   {
+    chassis.setMotorEfforts(0,0);
+   }
+  }
+  else if(roofState = 25)
+  {
+
+  }
+  else
+  {
+    Serial.println("Invalid Roof State Set");
+  }
 }
 
 void setup() {
@@ -166,31 +197,28 @@ void setup() {
   robotState = Idle;
 }
 
-//for lab
-long timeToPrint = 0;
-long now = 0;
-long newPosition = 0;
-long oldPosition = 0;
-long sampleTime = 50;
-float speedInRPM = 0;
-long deltaPos;
-const float ToRPM = 60000.0f / CountsPerRotation;
-//end of for lab
-
 void loop() {
   if(!batteryCheck()) return;
   sonar.update(); //Update Sonar
   checkRemote();
-  followLine(100);
+  //followLine(100);
+  if(dbtestactive) {approachRoof();}
+  else{
+    chassis.setMotorEfforts(0,0);
+  }
+  //followLine(-100);
   switch(robotState)
   {
     case Idle: //waiting for IR remote command
     break;
-    case ApproachingRoof25:
+    case ApproachingRoof:
     break;
   }
 
 
+
+
+  //temp here for manual control of the arm
   // Clamp move to
   if(clampMotor.moveTo(clampPos) == 2) {
     Serial.println(clampMotor.getPosition());
@@ -200,24 +228,4 @@ void loop() {
   //Swaps between move to and direct effort control
   if(blueMotorPosMode) blueMotor.moveTo(blueMotorPos);
   else blueMotor.setEffort(bme);
-
-  // Blue motor test; for lab
-  if(dbtestactive && abs(blueMotor.getPosition()) < 100) {
-    bme -= .1f;
-    if ((now = millis()) > timeToPrint)
-    {
-      timeToPrint = now + sampleTime;
-      newPosition = blueMotor.getPosition();
-      deltaPos = newPosition - oldPosition;
-      speedInRPM = ((float)deltaPos / (float)sampleTime) * ToRPM;
-      Serial.print(bme);
-      Serial.print(", ");
-      Serial.print(blueMotor.setEffortWithDeadband(bme));
-      Serial.print(", ");
-      Serial.println(speedInRPM);
-      oldPosition = newPosition;
-    }
-  } else if (dbtestactive) {
-    dbtestactive = false; bme = 0;
-  }
 }
