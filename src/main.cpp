@@ -36,9 +36,8 @@ bool dbtestactive = false, //Dead band test active
 
 const long targetLow = -1500,  //45d position
            targetLow2 = -1700, // raises plate
-           targetHigh = -3250,  //25d position
-           targetHigh2 = -1500, // raises plate
-           targetHighLower = -500, // past point of drop
+           targetHigh = -3300,  //25d position
+           targetHigh2 = -2500, // raises plate
            targetSonar = -1250; //min for clear of sonar
 const float sonarPickup = 10.2,
             sonar45 = 13.2,
@@ -95,10 +94,6 @@ bool checkRemote() {
     break;
   case RIGHT_ARROW:
     blueMotorPosMode = true;
-    break;
-    
-  case REWIND:
-    blueMotorPos = targetHighLower;
     break;
   case NUM_4:
     blueMotorPos = 0;
@@ -198,7 +193,7 @@ void loop() {
   else blueMotor.setEffort(bme);
 
   // Blue motor test; for lab
-  if(dbtestactive && abs(blueMotor.getPosition()) < 100) {
+  if(dbtestactive && abs(bme) < 400) {
     bme -= .1f;
     if ((now = millis()) > timeToPrint)
     {
@@ -206,9 +201,11 @@ void loop() {
       newPosition = blueMotor.getPosition();
       deltaPos = newPosition - oldPosition;
       speedInRPM = ((float)deltaPos / (float)sampleTime) * ToRPM;
+      Serial.print(now);
+      Serial.print(", ");
       Serial.print(bme);
       Serial.print(", ");
-      Serial.print(blueMotor.setEffortWithDeadband(bme));
+      Serial.print(-blueMotor.setEffortWithDeadband(bme));
       Serial.print(", ");
       Serial.println(speedInRPM);
       oldPosition = newPosition;
