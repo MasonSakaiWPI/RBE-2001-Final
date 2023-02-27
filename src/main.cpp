@@ -32,7 +32,7 @@ int clampPos = 300, //Clamp target position
     blueMotorPos = 0; //Blue Motor target position
 float bme = 0; //Blue motor manual effort
 
-bool dbtestactive = false, //Dead band test active
+bool approachRoofTest = false,
      blueMotorPosMode = false; //Use BME (false) or blueMotorPos(true)
 
 const long targetLow = -1500,  //45d position
@@ -41,7 +41,7 @@ const long targetLow = -1500,  //45d position
            targetHigh2 = -2500, // raises plate
            targetSonar = -1250; //min for clear of sonar
 const float sonarPickup = 10.2,
-            sonar45 = 13.2,
+            sonar45 = 13.3,
             sonar25 = 8.3;
 
 
@@ -50,7 +50,7 @@ bool checkRemote() {
   switch (decoder.getKeyCode())
   { //Everything here is for testing purposes
   case PLAY_PAUSE:
-    dbtestactive = !dbtestactive;
+    approachRoofTest = !approachRoofTest;
     break;
   case ENTER_SAVE:
     bme = 0;
@@ -74,6 +74,8 @@ bool checkRemote() {
     Serial.println(sonar.getDistance());
     Serial.print("Line: ");
     Serial.println(analogRead(3));
+    Serial.print("Battery Voltage: ");
+    Serial.println(readBatteryMillivolts());
     break;
 
   case NUM_1:
@@ -133,49 +135,72 @@ bool batteryCheck() {
   return true;
 }
 
+/**
+ * @brief Follows a black line on the field with a certain effort
+ * 
+ * @param effort the effort to line follow with
+ */
 void followLine(int effort) {
   int left = reflectanceSensor.readLeft();
   int right = reflectanceSensor.readRight();
   int delta = (left - right) / 20;
-    Serial.print("line: ");
-    Serial.print(left);
-    Serial.print("\t");
-    Serial.print(right);
-    Serial.print("\t");
-    Serial.println(delta);
   chassis.setMotorEfforts(effort+delta, effort-delta);
 }
-void approachRoof()//this needs work
+/**
+ * @brief Follows a black line on the field until the sonar detects that it is a certain distance away
+ * 
+ * @param distance the distance to approach to
+ * @return true if the robot is the specified distance away from an object
+ * @return false if the robot has yet to approach the target distance
+ */
+bool followLineWithSonar(float distance)
 {
   Serial.print("sonar: ");
   Serial.println(sonar.getDistance());
   int effort = -20;
   float delta;
-  if(roofState == 45)
+  delta = (sonar.getDistance() - distance);
+  if (delta > 0)
   {
-    delta = (sonar.getDistance()-sonar45);
-   if(delta>0)
-   {
-    effort = effort*delta;
-    //if(abs(effort)<50) {effort=50*(effort>0?1:-1);}
-    if(abs(effort)>100) {effort=100*(effort>0?1:-1);} //efort hard cap so it doesnt ram
+    effort = effort * delta;
+    if (abs(effort) > 0 && abs(effort) < 50)
+    {
+      effort = 50 * (effort > 0 ? 1 : -1);
+    }
+    if (abs(effort) > 100)
+    {
+      effort = 100 * (effort > 0 ? 1 : -1);
+    } // efort hard cap so it doesnt ram
     Serial.print("effort: ");
     Serial.println(effort);
     followLine(effort);
-   }
-   else
-   {
-    chassis.setMotorEfforts(0,0);
-   }
+    return false;
+  }
+  else
+  {
+    chassis.setMotorEfforts(0, 0);
+    return true;
+  }
+}
+bool approachRoof()
+{
+  
+  if(roofState == 45)
+  {
+    return followLineWithSonar(sonar45);
   }
   else if(roofState = 25)
   {
-
+    return followLineWithSonar(sonar25);
   }
   else
   {
     Serial.println("Invalid Roof State Set");
   }
+}
+bool approachStagingArea()
+{
+  followLineWithSonar(sonarPickup);
 }
 
 void setup() {
@@ -188,9 +213,6 @@ void setup() {
   blueMotor.setup();
   clampMotor.setup();
 
-  //https://www.pololu.com/category/123/pololu-qtr-reflectance-sensors
-  //Specific sensor: https://www.pololu.com/product/4246
-
   reflectanceSensor.setup();
 
   sonar.start();
@@ -202,7 +224,7 @@ void loop() {
   sonar.update(); //Update Sonar
   checkRemote();
   //followLine(100);
-  if(dbtestactive) {approachRoof();}
+  if(approachRoofTest) {approachRoof();}
   else{
     chassis.setMotorEfforts(0,0);
   }
