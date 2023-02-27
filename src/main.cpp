@@ -51,7 +51,6 @@ bool checkRemote() {
   { //Everything here is for testing purposes
   case PLAY_PAUSE:
     dbtestactive = !dbtestactive;
-    if(dbtestactive) blueMotor.reset();
     break;
   case ENTER_SAVE:
     bme = 0;
@@ -137,14 +136,20 @@ bool batteryCheck() {
 void followLine(int effort) {
   int left = reflectanceSensor.readLeft();
   int right = reflectanceSensor.readRight();
-  int delta = (left-right)/20;
+  int delta = (left - right) / 20;
+    Serial.print("line: ");
+    Serial.print(left);
+    Serial.print("\t");
+    Serial.print(right);
+    Serial.print("\t");
+    Serial.println(delta);
   chassis.setMotorEfforts(effort+delta, effort-delta);
 }
 void approachRoof()//this needs work
 {
   Serial.print("sonar: ");
   Serial.println(sonar.getDistance());
-  int effort = -100;
+  int effort = -20;
   float delta;
   if(roofState == 45)
   {
@@ -153,10 +158,10 @@ void approachRoof()//this needs work
    {
     effort = effort*delta;
     //if(abs(effort)<50) {effort=50*(effort>0?1:-1);}
-    if(abs(effort)>200) {effort=200*(effort>0?1:-1);} //efort hard cap so it doesnt ram
+    if(abs(effort)>100) {effort=100*(effort>0?1:-1);} //efort hard cap so it doesnt ram
     Serial.print("effort: ");
     Serial.println(effort);
-    chassis.setMotorEfforts(effort, effort);
+    followLine(effort);
    }
    else
    {
