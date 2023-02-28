@@ -238,6 +238,17 @@ void setup() {
   robotState = Idle;
 }
 
+/**
+ * @brief 
+ * 
+ * @return true 
+ * @return false 
+ */
+bool placeRoof()
+{
+
+}
+
 void loop() {
   if(!batteryCheck()) return;
   sonar.update(); //Update Sonar

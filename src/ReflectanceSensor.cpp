@@ -8,24 +8,49 @@ ReflectanceSensor::ReflectanceSensor()
 {
 }
 
+/**
+ * @brief Set up the microcontroller to be able to read the data from the sensor
+ * 
+ */
 void ReflectanceSensor::setup()
 {
     pinMode(FARLEFTPIN, INPUT);
     pinMode(LEFTPIN, INPUT); 
     pinMode(RIGHTPIN, INPUT); 
 }
+/**
+ * @brief Reads the value of the right reflectance sensor
+ * 
+ * @return int the value read
+ */
 int ReflectanceSensor::readRight()
 {
     return analogRead(RIGHTPIN);
 }
+/**
+ * @brief Reads the value of the far left reflectance sensor
+ * 
+ * @return int the value read
+ */
 int ReflectanceSensor::readFarLeft()
 {
     return analogRead(FARLEFTPIN);
 }
+/**
+ * @brief Determines if the far left reflectance sensor is over a line
+ * 
+ * @return true if it is over a black line
+ * @return false if it isn't over a black line
+ */
 bool ReflectanceSensor::farLeftOverLine()
 {
     return readFarLeft() > 600;
 }
+/**
+ * @brief Reads the value of the left reflectance sensor
+ * 
+ * @return int the value read
+ */
 int ReflectanceSensor::readLeft()
 {
     return analogRead(LEFTPIN);
