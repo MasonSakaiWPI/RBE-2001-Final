@@ -11,6 +11,10 @@ BlueMotor::BlueMotor()
 {
 }
 
+/**
+ * @brief Sets up the microcontroller to control the bluemotor (associated h bridge output waveforms and quadrature encoder inputs)
+ * 
+ */
 void BlueMotor::setup()
 {
     pinMode(PWMOutPin, OUTPUT);
