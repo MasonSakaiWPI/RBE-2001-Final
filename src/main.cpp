@@ -169,9 +169,9 @@ bool followLineWithSonar(float distance)
   if (delta > 0)
   {
     effort = effort * delta;
-    if (abs(effort) > 0 && abs(effort) < 50)
+    if (abs(effort) > 0 && abs(effort) < 70)
     {
-      effort = 50 * (effort > 0 ? 1 : -1);
+      effort = 70 * (effort > 0 ? 1 : -1);
     }
     if (abs(effort) > 100)
     {

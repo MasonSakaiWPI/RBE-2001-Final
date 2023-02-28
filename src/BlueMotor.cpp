@@ -93,7 +93,7 @@ int BlueMotor::setEffortWithDeadband(int effort, bool clockwise)
 {
     if(effort != 0) {
         effort = constrain(effort, 0, 400);
-        effort = effort * DeadbandMult;
+        effort = effort * DBMult + Deadband;
     }
     setEffort(effort, clockwise);
     return effort;

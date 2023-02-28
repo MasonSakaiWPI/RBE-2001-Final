@@ -26,5 +26,5 @@ private:
     const int ENCB = 1;
     const int kp = 16;
     const int Deadband = 320;
-    const float DeadbandMult = ((400.0f - Deadband) / 400.0f) + Deadband;
+    const float DBMult = (400.0f - Deadband) / 400.0f;
 };
