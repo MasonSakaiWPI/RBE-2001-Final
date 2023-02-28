@@ -24,7 +24,7 @@ BlueMotor blueMotor;
 ClampMotor clampMotor;
 Chassis chassis;
 
-enum robotStates {Idle, ApproachingRoof, ApproachingStagingArea, PlacingRoof, RemovingRoof, PlacingStagingArea, RemovingStagingArea};
+enum robotStates {Idle, Manual, ApproachingRoof, ApproachingStagingArea, PlacingRoof, RemovingRoof, PlacingStagingArea, RemovingStagingArea};
 int robotState;
 int roofState = 45; //this stores which side of the field the robot is on based on the roof angle
 
@@ -33,94 +33,23 @@ int clampPos = 300, //Clamp target position
 float bme = 0; //Blue motor manual effort
 
 bool approachRoofTest = false,
-     blueMotorPosMode = false; //Use BME (false) or blueMotorPos(true)
+     blueMotorPosMode = false, //Use BME (false) or blueMotorPos(true)
+     clampHolding = false;
 
 const long target45 = -1500,  //45d position
-           target45_2 = -1700, // raises plate
+           target45Hover = -1700, // raises plate
            target25 = -3300,  //25d position
-           target25_2 = -2500, // raises plate
-           targetSonar = -1250; //min for clear of sonar
-const float sonarPickup = 10.2,
+           target25Hover = -2500, // raises plate
+           targetSonar = -1250, //min for clear of sonar
+           targetStagingArea = 0;
+const float sonarDropoff = 10.2,
+            sonarPickup = 15,
             sonar45 = 13.3,
             sonar25 = 8.3;
+const int clampClosed = 80,
+          clampOpenSmall = 300,
+          clampOpenLarge = 1000;
 
-
-
-bool checkRemote() {
-  switch (decoder.getKeyCode())
-  { //Everything here is for testing purposes
-  case PLAY_PAUSE:
-    approachRoofTest = !approachRoofTest;
-    break;
-  case ENTER_SAVE:
-    bme = 0;
-    break;
-  case UP_ARROW:
-    bme += 50;
-    break;
-  case DOWN_ARROW:
-    bme -= 50;
-    break;
-    
-  case SETUP_BTN:
-    blueMotor.reset();
-    break;
-  case STOP_MODE:
-    Serial.print("Blue Motor Encoder: ");
-    Serial.println(blueMotor.getPosition());
-    Serial.print("Clamp Linear Pot: ");
-    Serial.println(clampMotor.getPosition());
-    Serial.print("Sonar Dist: ");
-    Serial.println(sonar.getDistance());
-    Serial.print("Line: ");
-    Serial.println(analogRead(3));
-    Serial.print("Battery Voltage: ");
-    Serial.println(readBatteryMillivolts());
-    break;
-
-  case NUM_1:
-    clampPos = 0;
-    break;
-  case NUM_2:
-    clampPos = 80;
-    break;
-  case NUM_3:
-    clampPos = 300;
-    break;
-  case NUM_0_10:
-    clampPos = 700;
-    break;
-    
-  case LEFT_ARROW:
-    blueMotorPosMode = false;
-    break;
-  case RIGHT_ARROW:
-    blueMotorPosMode = true;
-    break;
-  case NUM_4:
-    blueMotorPos = 0;
-    break;
-  case NUM_7:
-    blueMotorPos = targetSonar;
-    break;
-  case NUM_5:
-    blueMotorPos = target45;
-    break;
-  case NUM_8:
-    blueMotorPos = target45_2;
-    break;
-  case NUM_6:
-    blueMotorPos = target25;
-    break;
-  case NUM_9:
-    blueMotorPos = target25_2;
-    break;
-
-  default:
-    return false;
-  }
-  return true;
-}
 
 /**
  * @brief Determines if the robot's battery level is at a safe level to operate and plays a buzzer tone if they need to be replaced
@@ -132,6 +61,7 @@ bool batteryCheck() {
   //Battery check, stops everything and enables buzzer
   if(readBatteryMillivolts() < 6500 && readBatteryMillivolts() > 5000) {
     Serial.println(readBatteryMillivolts());
+    chassis.setMotorEfforts(0, 0);
     blueMotor.setEffort(0);
     clampMotor.setEffort(0);
     tone(6, 500);
@@ -149,7 +79,7 @@ bool batteryCheck() {
 void followLine(int effort) {
   int left = reflectanceSensor.readLeft();
   int right = reflectanceSensor.readRight();
-  int delta = (left - right) / 20;
+  int delta = (left - right) / 30;
   chassis.setMotorEfforts(effort+delta, effort-delta);
 }
 /**
@@ -169,9 +99,9 @@ bool followLineWithSonar(float distance)
   if (delta > 0)
   {
     effort = effort * delta;
-    if (abs(effort) > 0 && abs(effort) < 70)
+    if (abs(effort) > 0 && abs(effort) < 50)
     {
-      effort = 70 * (effort > 0 ? 1 : -1);
+      effort = 50 * (effort > 0 ? 1 : -1);
     }
     if (abs(effort) > 100)
     {
@@ -197,29 +127,20 @@ bool followLineWithSonar(float distance)
  */
 bool approachRoof()
 {
-  
-  if(roofState == 45)
-  {
-    return followLineWithSonar(sonar45);
-  }
-  else if(roofState = 25)
-  {
-    return followLineWithSonar(sonar25);
-  }
-  else
-  {
-    Serial.println("Invalid Roof State Set");
-  }
+  if(roofState == 45){return blueMotor.moveTo(clampHolding ? target45Hover : target45) && followLineWithSonar(sonar45);}
+  else if(roofState == 25){return blueMotor.moveTo(clampHolding ? target25Hover : target25) && followLineWithSonar(sonar25);}
+  else{Serial.println("Invalid Roof State Set");}
+  return false;
 }
 /**
- * @brief Method that is ocntinously run when the robot is in the "ApproachingStagingArea" state
+ * @brief Method that is continously run when the robot is in the "ApproachingStagingArea" state
  * This method moves the robot using the field lines towards the staging area
  * @return true if the robot is at the required distance away from the staging area
  * @return false if the robot is still moving towards the staging area
  */
 bool approachStagingArea()
 {
-  followLineWithSonar(sonarPickup);
+  return blueMotor.moveTo(targetSonar) && followLineWithSonar(clampHolding ? sonarDropoff : sonarPickup);
 }
 
 void setup() {
@@ -235,45 +156,180 @@ void setup() {
   reflectanceSensor.setup();
 
   sonar.start();
-  robotState = Idle;
+  while(!clampMotor.moveTo(clampOpenLarge)){} //open clamp motor on startup
+  robotState = Manual; //initial state
+}
+/**
+ * @brief Method that is continously run when the robot is in the "PlacingStagingArea" state
+ * This method moves the robot using the field lines towards the staging area
+ * @return true if the robot has finished placing on the staging area
+ * @return false if the robot is still placing on the staging area
+ */
+bool placeStagingArea()
+{
+  return blueMotor.moveTo(targetStagingArea) && clampMotor.moveTo(clampOpenSmall);
+}
+/**
+ * @brief Method that is continously run when the robot is in the "RemovingStagingArea" state
+ * This method moves the robot using the field lines towards the staging area
+ * @return true if the robot has finished removing on the staging area
+ * @return false if the robot is still revmoing on the staging area
+ */
+bool removeStagingArea()
+{
+  return clampMotor.moveTo(clampClosed) && blueMotor.moveTo(targetSonar); 
 }
 
+/**
+ * @brief Method that is continously run when the robot is in the "PlacingRoof" state
+ * This method places the collector on the roof
+ * @return true if the robot has finished placing the panel
+ * @return false if the robot is still placing the panel
+ */
+bool placeRoof()
+{
+  if(roofState == 45){return blueMotor.moveTo(target45) && clampMotor.moveTo(clampOpenLarge);}
+  else if(roofState ==25){return blueMotor.moveTo(target25 && clampMotor.moveTo(clampOpenLarge));}
+  else {Serial.println("Invalid Roof State");}
+  return false;
+}
 /**
  * @brief 
  * 
  * @return true 
  * @return false 
  */
-bool placeRoof()
+bool removeRoof()
 {
+  if(roofState == 45){return clampMotor.moveTo(clampClosed) && blueMotor.moveTo(target45Hover);}
+  else if(roofState == 25){return clampMotor.moveTo(clampClosed) && blueMotor.moveTo(target25Hover);}
+  else {Serial.println("Invalid Roof State");}
+  return false;
+}
+void manual()
+{
+  //Swaps between move to and direct effort control
+  if(blueMotorPosMode) blueMotor.moveTo(0);
+  else blueMotor.setEffort(bme);
+}
+void stop()
+{
+  chassis.setMotorEfforts(0, 0);
+  blueMotor.setEffort(0);
+  clampMotor.setEffort(0);
+}
 
+
+
+bool checkRemote() {
+  switch (decoder.getKeyCode())
+  {
+  case PLAY_PAUSE:
+    bme = 0;
+    break;
+  case VOLminus:
+    bme += 50;
+    break;
+  case VOLplus:
+    bme -= 50;
+    break;
+  case LEFT_ARROW:
+    blueMotorPosMode = false;
+    break;
+  case RIGHT_ARROW:
+    blueMotorPosMode = true;
+    break;
+  case SETUP_BTN:
+    blueMotor.reset();
+    break;
+
+  case STOP_MODE:
+    Serial.print("Robot State: ");
+    Serial.println(robotState);
+    Serial.print("Clamp State: ");
+    Serial.println(clampHolding);
+    Serial.print("Blue Motor Encoder: ");
+    Serial.println(blueMotor.getPosition());
+    Serial.print("Clamp Linear Pot: ");
+    Serial.println(clampMotor.getPosition());
+    Serial.print("Sonar Dist: ");
+    Serial.println(sonar.getDistance());
+    Serial.print("Line: ");
+    Serial.println(analogRead(3));
+    Serial.print("Battery Voltage: ");
+    Serial.println(readBatteryMillivolts());
+    break;
+
+  case UP_ARROW:
+    robotState = Manual;
+    blueMotorPosMode = false;
+    bme = 0;
+    break;
+  case ENTER_SAVE:
+    robotState = Idle;
+    stop();
+    break;
+    
+  case NUM_1:
+    robotState = ApproachingRoof;
+    break;
+  case NUM_4:
+    robotState = PlacingRoof;
+    break;
+  case NUM_7:
+    robotState = RemovingRoof;
+    break;
+  case NUM_3:
+    robotState = ApproachingStagingArea;
+    break;
+  case NUM_6:
+    robotState = PlacingStagingArea;
+    break;
+  case NUM_9:
+    robotState = RemovingStagingArea;
+    break;
+  default:
+    return false;
+  }
+  return true;
 }
 
 void loop() {
   if(!batteryCheck()) return;
   sonar.update(); //Update Sonar
   checkRemote();
-  //followLine(100);
-  if(approachRoofTest) {approachRoof();}
-  else{
-    chassis.setMotorEfforts(0,0);
-  }
   switch(robotState)
   {
-    case Idle: //waiting for IR remote command
-    break;
+    case Idle:
+      break;
+    case Manual:
+      manual();
+      break;
     case ApproachingRoof:
-    break;
+      approachRoof();
+      break;
+    case PlacingRoof:
+      if(placeRoof()) {
+        clampHolding = false;
+      }
+      break;
+    case RemovingRoof:
+      if(removeRoof()) {
+        clampHolding = true;
+      }
+      break;
+    case ApproachingStagingArea:
+      approachStagingArea();
+      break;
+    case PlacingStagingArea:
+      if(placeStagingArea()) {
+        clampHolding = false;
+      }
+      break;
+    case RemovingStagingArea:
+      if(removeStagingArea()) {
+        clampHolding = true;
+      }
+      break;
   }
-
-  //temp here for manual control of the arm
-  // Clamp move to
-  if(clampMotor.moveTo(clampPos) == 2) {
-    Serial.println(clampMotor.getPosition());
-    clampPos = clampMotor.getPosition();
-  }
-
-  //Swaps between move to and direct effort control
-  if(blueMotorPosMode) blueMotor.moveTo(blueMotorPos);
-  else blueMotor.setEffort(bme);
 }

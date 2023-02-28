@@ -9,7 +9,7 @@ public:
     ClampMotor();
     void setEffort(int effort);
     void setEffortWithDeadband(int effort);
-    byte moveTo(int position);
+    bool moveTo(int position);
     int getPosition();
     void setup();
     void reset();
