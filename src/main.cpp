@@ -35,10 +35,10 @@ float bme = 0; //Blue motor manual effort
 bool approachRoofTest = false,
      blueMotorPosMode = false; //Use BME (false) or blueMotorPos(true)
 
-const long targetLow = -1500,  //45d position
-           targetLow2 = -1700, // raises plate
-           targetHigh = -3300,  //25d position
-           targetHigh2 = -2500, // raises plate
+const long target45 = -1500,  //45d position
+           target45_2 = -1700, // raises plate
+           target25 = -3300,  //25d position
+           target25_2 = -2500, // raises plate
            targetSonar = -1250; //min for clear of sonar
 const float sonarPickup = 10.2,
             sonar45 = 13.3,
@@ -104,16 +104,16 @@ bool checkRemote() {
     blueMotorPos = targetSonar;
     break;
   case NUM_5:
-    blueMotorPos = targetLow;
+    blueMotorPos = target45;
     break;
   case NUM_8:
-    blueMotorPos = targetLow2;
+    blueMotorPos = target45_2;
     break;
   case NUM_6:
-    blueMotorPos = targetHigh;
+    blueMotorPos = target25;
     break;
   case NUM_9:
-    blueMotorPos = targetHigh2;
+    blueMotorPos = target25_2;
     break;
 
   default:
