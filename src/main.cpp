@@ -122,6 +122,12 @@ bool checkRemote() {
   return true;
 }
 
+/**
+ * @brief Determines if the robot's battery level is at a safe level to operate and plays a buzzer tone if they need to be replaced
+ * 
+ * @return true if the battery voltage is accepetable
+ * @return false if the batteries need to be replaced
+ */
 bool batteryCheck() {
   //Battery check, stops everything and enables buzzer
   if(readBatteryMillivolts() < 6500 && readBatteryMillivolts() > 5000) {
@@ -182,6 +188,13 @@ bool followLineWithSonar(float distance)
     return true;
   }
 }
+/**
+ * @brief Method that is continously run when robot is in the "ApproachingRoof" state.
+ * This method will bring the robot to the required distance away from the roof to ensure that it can place the collector.
+ * 
+ * @return true if the robot is at the required distance away from the house
+ * @return false if it is still moving towards the house
+ */
 bool approachRoof()
 {
   
@@ -198,6 +211,12 @@ bool approachRoof()
     Serial.println("Invalid Roof State Set");
   }
 }
+/**
+ * @brief Method that is ocntinously run when the robot is in the "ApproachingStagingArea" state
+ * This method moves the robot using the field lines towards the staging area
+ * @return true if the robot is at the required distance away from the staging area
+ * @return false if the robot is still moving towards the staging area
+ */
 bool approachStagingArea()
 {
   followLineWithSonar(sonarPickup);
@@ -228,7 +247,6 @@ void loop() {
   else{
     chassis.setMotorEfforts(0,0);
   }
-  //followLine(-100);
   switch(robotState)
   {
     case Idle: //waiting for IR remote command
@@ -236,9 +254,6 @@ void loop() {
     case ApproachingRoof:
     break;
   }
-
-
-
 
   //temp here for manual control of the arm
   // Clamp move to
