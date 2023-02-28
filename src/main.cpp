@@ -24,7 +24,7 @@ BlueMotor blueMotor;
 ClampMotor clampMotor;
 Chassis chassis;
 
-enum robotStates {Idle, ApproachingRoof, ApproachingStagingArea, PlacingRoof, PlacingStagingArea, RemovingRoof};
+enum robotStates {Idle, ApproachingRoof, ApproachingStagingArea, PlacingRoof, RemovingRoof, PlacingStagingArea, RemovingStagingArea};
 int robotState;
 int roofState = 45; //this stores which side of the field the robot is on based on the roof angle
 
