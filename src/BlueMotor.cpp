@@ -13,7 +13,6 @@ BlueMotor::BlueMotor()
 
 /**
  * @brief Sets up the microcontroller to control the bluemotor (associated h bridge output waveforms and quadrature encoder inputs)
- * 
  */
 void BlueMotor::setup()
 {
@@ -31,7 +30,11 @@ void BlueMotor::setup()
     attachInterrupt(digitalPinToInterrupt(ENCB), isrB, CHANGE);
     reset();
 }
-
+/**
+ * @brief Gets the position of the blue motor
+ * 
+ * @return The encoder position as a long
+ */
 long BlueMotor::getPosition()
 {
     long tempCount = 0;
@@ -41,6 +44,9 @@ long BlueMotor::getPosition()
     return tempCount;
 }
 
+/**
+ * @brief Resets the position counter to zero
+ */
 void BlueMotor::reset()
 {
     noInterrupts();
@@ -48,14 +54,18 @@ void BlueMotor::reset()
     interrupts();
 }
 
-
+/**
+ * @brief The ISR for sensor A
+ */
 void BlueMotor::isrA()
 {
     if(digitalRead(1) == digitalRead(0))
         count--;
     else count++;
 }
-
+/**
+ * @brief The ISR for sensor B
+ */
 void BlueMotor::isrB()
 {
     if(digitalRead(1) == digitalRead(0))
@@ -63,27 +73,44 @@ void BlueMotor::isrB()
     else count--;
 }
 
+/**
+ * @brief Applies the effort given with the set deadband, range -400 to 400
+ * 
+ * @return The applied effort with deadband
+ */
 int BlueMotor::setEffortWithDeadband(int effort)
 {
-    if (effort < 0) return setEffortWithDeadband(-effort, true);
+    if (effort < 0) return -setEffortWithDeadband(-effort, true);
     else            return setEffortWithDeadband(effort, false);
 }
-
+/**
+ * @brief Applies the effort given with a deadband, range -400 to 400
+ * @brief This version takes unsigned, and a "negative" value would be clockwise
+ * 
+ * @return The applied effort with deadband
+ */
 int BlueMotor::setEffortWithDeadband(int effort, bool clockwise)
 {
-    if(effort != 0)
-        effort = effort * ((400.0f - Deadband) / 400.0f) + Deadband;
+    if(effort != 0) {
+        effort = constrain(effort, 0, 400);
+        effort = effort * DeadbandMult;
+    }
     setEffort(effort, clockwise);
     return effort;
 }
 
-
+/**
+ * @brief Sets the effort of the motor, range -400 to 400
+ */
 void BlueMotor::setEffort(int effort)
 {
     if (effort < 0) setEffort(-effort, true);
     else            setEffort(effort, false);
 }
-
+/**
+ * @brief Sets the effort of the motor, range -400 to 400.
+ * @brief This version takes unsigned, and a "negative" value would be clockwise
+ */
 void BlueMotor::setEffort(int effort, bool clockwise)
 {
     if (clockwise)
@@ -99,6 +126,12 @@ void BlueMotor::setEffort(int effort, bool clockwise)
     OCR1C = constrain(effort, 0, 400);
 }
 
+/**
+ * @brief Moves the motor to the given position. This uses the motor deadband
+ * 
+ * @return true if the motor has reached it's target position,
+ * @return false otherwise
+ */
 bool BlueMotor::moveTo(long target)
 {
     long deltaP = target - count;
@@ -106,9 +139,6 @@ bool BlueMotor::moveTo(long target)
         setEffort(0);
         return true;
     }
-    /*Serial.print(deltaP);
-    Serial.print("\t");
-    Serial.println(deltaP * kp);*/
     if(deltaP * kp >= INT16_MAX)       deltaP = INT16_MAX / kp;
     else if (deltaP * kp <= INT16_MIN) deltaP = INT16_MIN / kp;
     setEffortWithDeadband(deltaP * kp);

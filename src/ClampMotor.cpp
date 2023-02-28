@@ -12,17 +12,28 @@ ClampMotor::ClampMotor()
 {
 }
 
+/**
+ * @brief Sets up the motor control
+ */
 void ClampMotor::setup()
 {
     servo.attach();
     pinMode(18, INPUT);
 }
 
-long ClampMotor::getPosition()
+/**
+ * @brief Gets the position of the linear potentiomenter
+ * 
+ * @return The position as a int
+ */
+int ClampMotor::getPosition()
 {
     return analogRead(0);
 }
 
+/**
+ * @brief Disconnects the motor (Setup needs to be rerun)
+ */
 void ClampMotor::reset()
 {
     servo.detach();
@@ -30,6 +41,9 @@ void ClampMotor::reset()
     lastUpdatedTime = millis();
 }
 
+/**
+ * @brief Applies the effort given with the set deadband, range -600 to 600
+ */
 void ClampMotor::setEffortWithDeadband(int effort)
 {
     if(effort != 0) {
@@ -40,8 +54,9 @@ void ClampMotor::setEffortWithDeadband(int effort)
     }
     setEffort(effort);
 }
-
-
+/**
+ * @brief Sets the effort of the motor, range -600 to 600
+ */
 void ClampMotor::setEffort(int effort)
 {
     if(effort == 0) servo.detach();
@@ -51,6 +66,13 @@ void ClampMotor::setEffort(int effort)
     }
 }
 
+/**
+ * @brief Moves the motor to the given position. This uses the motor deadband
+ * 
+ * @return 0 if the motor is in motion,
+ * @return 1 if the motor has reached it's final position or is trying to move out of bounds,
+ * @return 2 if the motor has been stationary for too long (requres immediate handling)
+ */
 byte ClampMotor::moveTo(int target)
 {
     if(target != lastTarget) {
