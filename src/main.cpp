@@ -24,28 +24,29 @@ BlueMotor blueMotor;
 ClampMotor clampMotor;
 Chassis chassis;
 
-enum currentRobotStates {Idle, Manual, Initializing, ApproachingRoof, ApproachingStagingArea, PlacingRoof, RemovingRoof, PlacingStagingArea, RemovingStagingArea, DepartRoof, LeftTurnTest, RightTurnTest};
+enum currentRobotStates {Idle, Manual, Initializing, ApproachingRoof, ApproachingStagingArea, PlacingRoof, RemovingRoof, PlacingStagingArea, RemovingStagingArea, DepartRoof, DepartStagingArea};
 int currentRobotState;
 int nextRobotState;
 int roofState = 45; //this stores which side of the field the robot is on based on the roof angle
+bool resume = false; 
 
 float bme = 0; //Blue motor manual effort
 
 bool blueMotorPosMode = false, //Use BME (false) or blueMotorPos(true)
      clampHolding = false;
 
-const long target45 = -1500,  //45d position
+const long target45 = -1480,  //45d position
            target45Hover = -1700, // raises plate
            target25 = -3300,  //25d position
            target25Hover = -2500, // raises plate
-           targetSonar = -1250, //min for clear of sonar
+           targetSonar = -1700, //min for clear of sonar
            targetStagingArea = 0;
-const float sonarDropoff = 10.2,
+const float sonarDropoff = 9.3,
             sonarPickup = 15,
             sonar45 = 13.75,
             sonar45Depart = 17,
             sonar25 = 8.3;
-const int clampClosed = 80,
+const int clampClosed = 70,
           clampOpenSmall = 300,
           clampOpenLarge = 1000;
 
@@ -58,7 +59,7 @@ const int clampClosed = 80,
  */
 bool batteryCheck() {
   //Battery check, stops everything and enables buzzer
-  if(readBatteryMillivolts() < 6500 && readBatteryMillivolts() > 5000) {
+  if(readBatteryMillivolts() < 7000 && readBatteryMillivolts() > 5000) {
     Serial.println(readBatteryMillivolts());
     chassis.setMotorEfforts(0, 0);
     blueMotor.setEffort(0);
@@ -69,7 +70,6 @@ bool batteryCheck() {
   noTone(6);
   return true;
 }
-
 /**
  * @brief Follows a black line on the field with a certain effort
  * 
@@ -84,6 +84,26 @@ int followLine(int effort) {
   return delta;
 }
 /**
+ * @brief 
+ * 
+ * @param encoderTicks 
+ * @return true 
+ * @return false 
+ */
+bool followLineDistance(long encoderTicks)
+{
+  long pos = chassis.getLeftEncoderCount();
+  long delta = encoderTicks - pos;
+  if(abs(delta) < 10) {
+    chassis.setMotorEfforts(0,0);
+    return true;
+  }
+  delta *= 10;
+  delta = constrain(delta, -70, 70);
+  followLine(delta);
+  return false;
+}
+/**
  * @brief Follows a black line on the field until the sonar detects that it is a certain distance away
  * 
  * @param distance the distance to approach to
@@ -92,12 +112,12 @@ int followLine(int effort) {
  */
 bool followLineWithSonar(float distance)
 {
-  Serial.print("sonar: ");
-  Serial.println(sonar.getDistance());
+  //Serial.print("sonar: ");
+  //Serial.println(sonar.getDistance());
   int effort = -20;
   float delta;
   delta = (sonar.getDistance() - distance);
-  if (abs(delta) > .05f)
+  if (abs(delta) > .1f)
   {
     effort = effort * delta;
     if (abs(effort) > 0 && abs(effort) < 50)
@@ -108,8 +128,8 @@ bool followLineWithSonar(float distance)
     {
       effort = 100 * (effort > 0 ? 1 : -1);
     } // efort hard cap so it doesnt ram
-    Serial.print("effort: ");
-    Serial.println(effort);
+    //Serial.print("effort: ");
+    //Serial.println(effort);
     followLine(effort);
     return false;
   }
@@ -167,7 +187,7 @@ void setup() {
  */
 bool placeStagingArea()
 {
-  return blueMotor.moveTo(targetStagingArea) && clampMotor.moveTo(clampOpenSmall);
+  return blueMotor.moveTo(targetStagingArea) && resume && clampMotor.moveTo(clampOpenSmall);
 }
 /**
  * @brief Method that is continously run when the robot is in the "RemovingStagingArea" state
@@ -201,8 +221,8 @@ bool placeRoof()
  */
 bool removeRoof()
 {
-  if(roofState == 45){return clampMotor.moveTo(clampClosed) && blueMotor.moveTo(target45Hover);}
-  else if(roofState == 25){return clampMotor.moveTo(clampClosed) && blueMotor.moveTo(target25Hover);}
+  if(roofState == 45){return clampMotor.moveTo(clampClosed) && resume && blueMotor.moveTo(target45Hover);}
+  else if(roofState == 25){return clampMotor.moveTo(clampClosed) && resume && blueMotor.moveTo(target25Hover);}
   else {Serial.println("Invalid Roof State");}
   return false;
 }
@@ -225,17 +245,24 @@ void resetTurn() {
   turnState = 0;
   linesPassed = -1;
 }
+/**
+ * @brief 
+ * 
+ * @param linesToPass 
+ * @return true 
+ * @return false 
+ */
 bool turnLeft(int linesToPass) {
   switch (turnState)
   {
   case 0: //Startup
-  chassis.setMotorEfforts(-100, 100);
+  chassis.setMotorEfforts(-70, 70);
     turnState = 1;
   case 1: //Wait for Left to rise
     if(reflectanceSensor.getLeftLineState() == RISING) {
       linesPassed++;
       turnState = 2;
-      if(linesPassed == linesToPass) turnState = 3;
+      if(linesPassed == linesToPass) turnState = 4;
     }
     break;
   case 2: //Wait for Right to lower
@@ -243,24 +270,31 @@ bool turnLeft(int linesToPass) {
     break;
   case 3:
     if(abs(followLine(0)) > 20) return false;
-    chassis.setMotorEfforts(0,0);
     turnState = 4;
   case 4:
+    chassis.setMotorEfforts(0,0);
     return true;
   }
   return false;
 }
+/**
+ * @brief 
+ * 
+ * @param linesToPass 
+ * @return true 
+ * @return false 
+ */
 bool turnRight(int linesToPass) {
   switch (turnState)
   {
   case 0: //Startup
-  chassis.setMotorEfforts(100, -100);
+  chassis.setMotorEfforts(70, -70);
     turnState = 1;
   case 1: //Wait for Right to rise
     if(reflectanceSensor.getRightLineState() == RISING) {
       linesPassed++;
       turnState = 2;
-      if(linesPassed == linesToPass) turnState = 3;
+      if(linesPassed == linesToPass) turnState = 4;
     }
     break;
   case 2: //Wait for Left to lower
@@ -268,9 +302,84 @@ bool turnRight(int linesToPass) {
     break;
   case 3:
     if(abs(followLine(0)) > 20) return false;
-    chassis.setMotorEfforts(0,0);
     turnState = 4;
   case 4:
+    chassis.setMotorEfforts(0,0);
+    return true;
+  }
+  return false;
+}
+
+byte departState = 0;
+bool departRoof() {
+  static long encoderStart = 0;
+  switch (departState)
+  {
+  case 0: //Back Up
+    if(followLineWithSonar(sonar45Depart)) {
+      departState = 1;
+    }
+    break;
+  case 1: //turn around
+    if(turnLeft(0)) {
+      resetTurn();
+      departState = 2;
+    }
+    break;
+  case 2: //Line follow to black line
+    followLine(-70);
+    if(reflectanceSensor.farRightOverLine()) {
+      departState = 3;
+      encoderStart = chassis.getLeftEncoderCount();
+    }
+    break;
+  case 3: //Line follow set distance (encoder)
+    if(followLineDistance(encoderStart - 650)) {
+      departState = 4;
+    }
+    break;
+  case 4: //Turn
+    if(turnRight(0)) {
+      resetTurn();
+      departState = 5;
+    }
+    break;
+  case 5: //Done
+    departState = 0;
+    return true;
+  }
+  return false;
+}
+bool departStagingArea() {
+  static long encoderStart = 0;
+  switch (departState)
+  {
+  case 0: //turn around
+    if(turnLeft(0)) {
+      resetTurn();
+      departState++;
+    }
+    break;
+  case 1: //Line follow to black line
+    followLine(-70);
+    if(reflectanceSensor.farRightOverLine()) {
+      departState++;
+      encoderStart = chassis.getLeftEncoderCount();
+    }
+    break;
+  case 2: //Line follow set distance (encoder)
+    if(followLineDistance(encoderStart - 650)) {
+      departState++;
+    }
+    break;
+  case 3: //Turn
+    if(turnLeft(0)) {
+      resetTurn();
+      departState++;
+    }
+    break;
+  case 4: //Done
+    departState = 0;
     return true;
   }
   return false;
@@ -288,8 +397,7 @@ bool checkRemote() {
   case PLAY_PAUSE:
     if(currentRobotState == Manual) bme = 0;
     else {
-      currentRobotState = nextRobotState;
-      nextRobotState = Idle;
+      resume = true;
     }
     break;
   case VOLminus:
@@ -300,15 +408,18 @@ bool checkRemote() {
     break;
   case LEFT_ARROW:
     blueMotorPosMode = false;
+      Serial.println("blueMotorPosMode is now false");
     break;
   case RIGHT_ARROW:
     blueMotorPosMode = true;
+      Serial.println("blueMotorPosMode is now true");
     break;
   case SETUP_BTN:
     blueMotor.reset();
+      Serial.println("Re-zeroing blue motor");
     break;
 
-  case STOP_MODE:
+  case ENTER_SAVE:
     Serial.print("Robot State: ");
     Serial.println(currentRobotState);
     Serial.print("Clamp State: ");
@@ -321,6 +432,8 @@ bool checkRemote() {
     Serial.println(sonar.getDistance());
     Serial.print("Line: ");
     Serial.println(analogRead(3));
+    Serial.print("Left Encoder: ");
+    Serial.println(chassis.getLeftEncoderCount());
     Serial.print("Battery Voltage: ");
     Serial.println(readBatteryMillivolts());
     break;
@@ -329,38 +442,48 @@ bool checkRemote() {
     currentRobotState = Manual;
     blueMotorPosMode = false;
     bme = 0;
+      Serial.println("Override to Manual");
+      Serial.println("blueMotorPosMode is now false");
+      Serial.println();
     break;
-  case ENTER_SAVE:
+  case STOP_MODE:
+    nextRobotState = currentRobotState;
     currentRobotState = Idle;
+    resume = false;
     stop();
+    Serial.println("Override to Idle");
+    Serial.println();
     break;
     
   case NUM_1:
     currentRobotState = ApproachingRoof;
+    Serial.println("Override to ApproachingRoof");
+    Serial.println();
     break;
   case NUM_4:
     currentRobotState = PlacingRoof;
+    Serial.println("Override to PlacingRoof");
+    Serial.println();
     break;
   case NUM_7:
     currentRobotState = RemovingRoof;
+    Serial.println("Override to RemovingRoof");
+    Serial.println();
     break;
   case NUM_3:
     currentRobotState = ApproachingStagingArea;
+    Serial.println("Override to ApproachingStagingArea");
+    Serial.println();
     break;
   case NUM_6:
     currentRobotState = PlacingStagingArea;
+    Serial.println("Override to PlacingStagingArea");
+    Serial.println();
     break;
   case NUM_9:
     currentRobotState = RemovingStagingArea;
-    break;
-
-  case DOWN_ARROW:
-    currentRobotState = LeftTurnTest;
-    resetTurn();
-    break;
-  case NUM_0_10:
-    currentRobotState = RightTurnTest;
-    resetTurn();
+    Serial.println("Override to RemovingStagingArea");
+    Serial.println();
     break;
   default:
     return false;
@@ -376,6 +499,16 @@ void loop() {
   reflectanceSensor.updateRightLineState();
   switch(currentRobotState)
   {
+    case Idle:
+      if(resume) {
+        currentRobotState = nextRobotState;
+        nextRobotState = Idle;
+        resume = false;
+        Serial.println("Overriding to nextRobotState");
+        Serial.println("Next State is Idle");
+        Serial.println();
+      }
+      break;
     case Manual:
       manual();
       break;
@@ -383,54 +516,104 @@ void loop() {
       if(clampMotor.moveTo(clampOpenLarge)) {
         currentRobotState = Manual;
         nextRobotState = ApproachingRoof;
+        Serial.println("Moving from Initializing to Manual");
+        Serial.println("Next State is ApproachingRoof");
+        Serial.println();
       }
       break;
     case ApproachingRoof:
       if(approachRoof())
       {
-        if(clampHolding){currentRobotState = PlacingRoof;} 
-        else {currentRobotState = RemovingRoof;}
+        if(clampHolding) {
+          currentRobotState = PlacingRoof;
+          Serial.println("Moving from ApproachingRoof to PlacingRoof");
+          Serial.println();
+        } 
+        else {
+          currentRobotState = RemovingRoof;
+          Serial.println("Moving from ApproachingRoof to RemovingRoof");
+          Serial.println();
+        }
+        stop();
       }
       break;
     case PlacingRoof:
       if(placeRoof()) {
         clampHolding = false;
-        currentRobotState = Idle;
+        currentRobotState = DepartRoof;
+        stop();
+        Serial.println("Moving from PlacingRoof to Idle");
+        Serial.println("Now Not Holding");
+        Serial.println();
       }
       break;
     case RemovingRoof:
       if(removeRoof()) {
+        resume = false;
         clampHolding = true;
-        currentRobotState = Idle;
+        currentRobotState = DepartRoof;
         stop();
+        Serial.println("Moving from RemovingRoof to DepartRoof");
+        Serial.println("Now Holding");
+        Serial.println();
+      }
+      break;
+    case DepartRoof:
+      if(departRoof()) {
+        if(clampHolding) {
+          currentRobotState = ApproachingStagingArea;
+          Serial.println("Moving from DepartRoof to ApproachingStagingArea");
+          Serial.println();
+        } else {
+          currentRobotState = Idle; //Crossing
+          Serial.println("Moving from DepartRoof to Idle");
+          Serial.println();
+        }
       }
       break;
     case ApproachingStagingArea:
       if(approachStagingArea())
       {
-        if(clampHolding){currentRobotState = PlacingStagingArea;}
-        else currentRobotState = RemovingStagingArea;
+        if(clampHolding){
+          currentRobotState = PlacingStagingArea;
+          Serial.println("Moving from ApproachingStagingArea to PlacingStagingArea");
+          Serial.println();
+          }
+        else {
+          currentRobotState = RemovingStagingArea;
+          Serial.println("Moving from ApproachingStagingArea to RemovingStagingArea");
+          Serial.println();
+        }
       }
       break;
     case PlacingStagingArea:
       if(placeStagingArea()) {
         clampHolding = false;
+        resume = false;
         nextRobotState = RemovingStagingArea;
         currentRobotState = Idle;
+        Serial.println("Moving from PlacingStagingArea to Idle");
+        Serial.println("Next State is RemovingStagingArea");
+        Serial.println("Now Not Holding");
+        Serial.println();
       }
       break;
     case RemovingStagingArea:
       if(removeStagingArea()) {
         clampHolding = true;
-        currentRobotState = Idle;
+        currentRobotState = DepartStagingArea;
         stop();
+        Serial.println("Moving from RemovingStagingArea to DepartStagingArea");
+        Serial.println("Now Holding");
+        Serial.println();
       }
       break;
-    case LeftTurnTest:
-      turnLeft(0);
-      break;
-    case RightTurnTest:
-      turnRight(0);
+    case DepartStagingArea:
+      if(departStagingArea()) {
+        currentRobotState = ApproachingRoof;
+        Serial.println("Moving from DepartStagingArea to ApproachingRoof");
+        Serial.println();
+      }
       break;
   }
   if(currentRobotState != Manual) blueMotor.safetyCheck();

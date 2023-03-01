@@ -80,19 +80,19 @@ int ReflectanceSensor::readLeft()
 byte ReflectanceSensor::updateLeftLineState() {
   if(leftOverLine()) {
     if(leftState == LOW || leftState == FALLING) return (leftState = RISING);
-    if(leftState == HIGH || leftState == RISING) return (leftState = HIGH);
+    else return (leftState = HIGH);
   } else {
     if(leftState == LOW || leftState == FALLING) return (leftState = LOW);
-    if(leftState == RISING || leftState == HIGH) return (leftState = FALLING);
+    else return (leftState = FALLING);
   }
 }
 byte ReflectanceSensor::updateRightLineState() {
   if(rightOverLine()) {
     if(rightState == LOW || rightState == FALLING) return (rightState = RISING);
-    if(rightState == RISING || rightState == HIGH) return (rightState = HIGH);
+    else return (rightState = HIGH);
   } else {
     if(rightState == LOW || rightState == FALLING) return (rightState = LOW);
-    if(rightState == RISING || rightState == HIGH) return (rightState = FALLING);
+    else return (rightState = FALLING);
   }
 }
 byte ReflectanceSensor::getLeftLineState() {
