@@ -24,13 +24,11 @@ BlueMotor blueMotor;
 ClampMotor clampMotor;
 Chassis chassis;
 
-enum currentRobotStates {Idle, Manual, Initializing, ApproachingRoof, ApproachingStagingArea, PlacingRoof, RemovingRoof, PlacingStagingArea, RemovingStagingArea};
+enum currentRobotStates {Idle, Manual, Initializing, ApproachingRoof, ApproachingStagingArea, PlacingRoof, RemovingRoof, PlacingStagingArea, RemovingStagingArea, DepartRoof, LeftTurnTest, RightTurnTest};
 int currentRobotState;
 int nextRobotState;
 int roofState = 45; //this stores which side of the field the robot is on based on the roof angle
 
-int clampPos = 300, //Clamp target position
-    blueMotorPos = 0; //Blue Motor target position
 float bme = 0; //Blue motor manual effort
 
 bool blueMotorPosMode = false, //Use BME (false) or blueMotorPos(true)
@@ -45,6 +43,7 @@ const long target45 = -1500,  //45d position
 const float sonarDropoff = 10.2,
             sonarPickup = 15,
             sonar45 = 13.75,
+            sonar45Depart = 17,
             sonar25 = 8.3;
 const int clampClosed = 80,
           clampOpenSmall = 300,
@@ -79,7 +78,7 @@ bool batteryCheck() {
 int followLine(int effort) {
   int left = reflectanceSensor.readLeft();
   int right = reflectanceSensor.readRight();
-  int delta = left - right;
+  int delta = right - left;
   int turnEffort = delta / 30;
   chassis.setMotorEfforts(effort+turnEffort, effort-turnEffort);
   return delta;
@@ -98,7 +97,7 @@ bool followLineWithSonar(float distance)
   int effort = -20;
   float delta;
   delta = (sonar.getDistance() - distance);
-  if (delta > 0)
+  if (abs(delta) > .05f)
   {
     effort = effort * delta;
     if (abs(effort) > 0 && abs(effort) < 50)
@@ -233,16 +232,14 @@ bool turnLeft(int linesToPass) {
   chassis.setMotorEfforts(-100, 100);
     turnState = 1;
   case 1: //Wait for Left to rise
-    reflectanceSensor.updateRightLineState();
-    if(reflectanceSensor.updateLeftLineState() == RISING) {
+    if(reflectanceSensor.getLeftLineState() == RISING) {
       linesPassed++;
       turnState = 2;
-      if(linesPassed == linesToPass) turnState == 3;
+      if(linesPassed == linesToPass) turnState = 3;
     }
     break;
   case 2: //Wait for Right to lower
-    reflectanceSensor.updateRightLineState();
-    if(reflectanceSensor.updateLeftLineState() == FALLING) turnState = 1;
+    if(reflectanceSensor.getRightLineState() == FALLING) turnState = 1;
     break;
   case 3:
     if(abs(followLine(0)) > 20) return false;
@@ -254,7 +251,29 @@ bool turnLeft(int linesToPass) {
   return false;
 }
 bool turnRight(int linesToPass) {
-  
+  switch (turnState)
+  {
+  case 0: //Startup
+  chassis.setMotorEfforts(100, -100);
+    turnState = 1;
+  case 1: //Wait for Right to rise
+    if(reflectanceSensor.getRightLineState() == RISING) {
+      linesPassed++;
+      turnState = 2;
+      if(linesPassed == linesToPass) turnState = 3;
+    }
+    break;
+  case 2: //Wait for Left to lower
+    if(reflectanceSensor.getLeftLineState() == FALLING) turnState = 1;
+    break;
+  case 3:
+    if(abs(followLine(0)) > 20) return false;
+    chassis.setMotorEfforts(0,0);
+    turnState = 4;
+  case 4:
+    return true;
+  }
+  return false;
 }
 
 /**
@@ -334,6 +353,15 @@ bool checkRemote() {
   case NUM_9:
     currentRobotState = RemovingStagingArea;
     break;
+
+  case DOWN_ARROW:
+    currentRobotState = LeftTurnTest;
+    resetTurn();
+    break;
+  case NUM_0_10:
+    currentRobotState = RightTurnTest;
+    resetTurn();
+    break;
   default:
     return false;
   }
@@ -344,6 +372,8 @@ void loop() {
   if(!batteryCheck()) return;
   sonar.update(); //Update Sonar
   checkRemote();
+  reflectanceSensor.updateLeftLineState();
+  reflectanceSensor.updateRightLineState();
   switch(currentRobotState)
   {
     case Manual:
@@ -395,6 +425,12 @@ void loop() {
         currentRobotState = Idle;
         stop();
       }
+      break;
+    case LeftTurnTest:
+      turnLeft(0);
+      break;
+    case RightTurnTest:
+      turnRight(0);
       break;
   }
   if(currentRobotState != Manual) blueMotor.safetyCheck();

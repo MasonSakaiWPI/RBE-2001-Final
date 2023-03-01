@@ -15,6 +15,6 @@ class ReflectanceSensor
         byte getLeftLineState();
         byte getRightLineState();
     private:
-        int LineThreshold = 200;
+        int LineThreshold = 400;
         byte leftState, rightState;
 };
