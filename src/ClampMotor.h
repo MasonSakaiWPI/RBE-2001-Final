@@ -13,6 +13,7 @@ public:
     int getPosition();
     void setup();
     void reset();
+    void safetyCheck();
 
 private:
     const int tolerance = 8;

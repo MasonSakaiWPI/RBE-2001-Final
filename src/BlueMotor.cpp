@@ -126,6 +126,12 @@ void BlueMotor::setEffort(int effort, bool clockwise)
     OCR1C = constrain(effort, 0, 400);
 }
 
+void BlueMotor::safetyCheck() {
+    long pos = getPosition();
+    if(pos > 50) setEffort(0);
+    else if (pos < -2700) setEffort(0);
+}
+
 /**
  * @brief Moves the motor to the given position. This uses the motor deadband
  * 

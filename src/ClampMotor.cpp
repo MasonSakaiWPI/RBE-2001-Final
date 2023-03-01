@@ -20,6 +20,7 @@ void ClampMotor::setup()
     servo.attach();
     pinMode(18, INPUT);
     setEffort(0);
+    lastUpdatedTime = millis();
 }
 
 /**
@@ -67,6 +68,13 @@ void ClampMotor::setEffort(int effort)
     }
 }
 
+void ClampMotor::safetyCheck() {
+    int pos = getPosition();
+    if(pos < 5 || pos > 1020) {
+        setEffort(0);
+    }
+}
+
 /**
  * @brief Moves the motor to the given position. This uses the motor deadband
  * 
@@ -87,7 +95,7 @@ bool ClampMotor::moveTo(int target)
     /*Serial.print(deltaP);
     Serial.print("\t");
     Serial.println(deltaP * kp);*/
-    if(abs(deltaP) < tolerance || (deltaP * kp > 0 && pos == 0) || (deltaP * kp < 0 && pos > 1020)) {
+    if(abs(deltaP) < tolerance || (deltaP * kp > 0 && pos == 0) || (deltaP * kp > 0 && pos > 1020)) {
         setEffort(0);
         return true;
     } else if(abs(lastUpdatedPosition - pos) > LUTThreshold) {
@@ -104,6 +112,7 @@ bool ClampMotor::moveTo(int target)
     else if(lastUpdatedTime + LUTTimeout < millis()) {
         //Serial.print("Hit at ");
         //Serial.println(pos);
+        setEffort(0);
         return true;
     }
     setEffortWithDeadband(deltaP * kp);

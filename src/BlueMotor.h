@@ -12,6 +12,7 @@ public:
     long getPosition();
     void reset();
     void setup();
+    void safetyCheck();
 
 private:
     void setEffort(int effort, bool clockwise);

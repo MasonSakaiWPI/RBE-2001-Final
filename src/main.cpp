@@ -24,16 +24,16 @@ BlueMotor blueMotor;
 ClampMotor clampMotor;
 Chassis chassis;
 
-enum robotStates {Idle, Manual, ApproachingRoof, ApproachingStagingArea, PlacingRoof, RemovingRoof, PlacingStagingArea, RemovingStagingArea};
-int robotState;
+enum currentRobotStates {Idle, Manual, Initializing, ApproachingRoof, ApproachingStagingArea, PlacingRoof, RemovingRoof, PlacingStagingArea, RemovingStagingArea};
+int currentRobotState;
+int nextRobotState;
 int roofState = 45; //this stores which side of the field the robot is on based on the roof angle
 
 int clampPos = 300, //Clamp target position
     blueMotorPos = 0; //Blue Motor target position
 float bme = 0; //Blue motor manual effort
 
-bool approachRoofTest = false,
-     blueMotorPosMode = false, //Use BME (false) or blueMotorPos(true)
+bool blueMotorPosMode = false, //Use BME (false) or blueMotorPos(true)
      clampHolding = false;
 
 const long target45 = -1500,  //45d position
@@ -44,7 +44,7 @@ const long target45 = -1500,  //45d position
            targetStagingArea = 0;
 const float sonarDropoff = 10.2,
             sonarPickup = 15,
-            sonar45 = 13.3,
+            sonar45 = 13.75,
             sonar25 = 8.3;
 const int clampClosed = 80,
           clampOpenSmall = 300,
@@ -156,8 +156,7 @@ void setup() {
   reflectanceSensor.setup();
 
   sonar.start();
-  while(!clampMotor.moveTo(clampOpenLarge)){} //open clamp motor on startup
-  robotState = Manual; //initial state
+  currentRobotState = Initializing; //initial state
 }
 /**
  * @brief Method that is continously run when the robot is in the "PlacingStagingArea" state
@@ -218,14 +217,15 @@ void stop()
   blueMotor.setEffort(0);
   clampMotor.setEffort(0);
 }
-
-
-
 bool checkRemote() {
   switch (decoder.getKeyCode())
   {
   case PLAY_PAUSE:
-    bme = 0;
+    if(currentRobotState == Manual) bme = 0;
+    else {
+      currentRobotState = nextRobotState;
+      nextRobotState = Idle;
+    }
     break;
   case VOLminus:
     bme += 50;
@@ -245,7 +245,7 @@ bool checkRemote() {
 
   case STOP_MODE:
     Serial.print("Robot State: ");
-    Serial.println(robotState);
+    Serial.println(currentRobotState);
     Serial.print("Clamp State: ");
     Serial.println(clampHolding);
     Serial.print("Blue Motor Encoder: ");
@@ -261,32 +261,32 @@ bool checkRemote() {
     break;
 
   case UP_ARROW:
-    robotState = Manual;
+    currentRobotState = Manual;
     blueMotorPosMode = false;
     bme = 0;
     break;
   case ENTER_SAVE:
-    robotState = Idle;
+    currentRobotState = Idle;
     stop();
     break;
     
   case NUM_1:
-    robotState = ApproachingRoof;
+    currentRobotState = ApproachingRoof;
     break;
   case NUM_4:
-    robotState = PlacingRoof;
+    currentRobotState = PlacingRoof;
     break;
   case NUM_7:
-    robotState = RemovingRoof;
+    currentRobotState = RemovingRoof;
     break;
   case NUM_3:
-    robotState = ApproachingStagingArea;
+    currentRobotState = ApproachingStagingArea;
     break;
   case NUM_6:
-    robotState = PlacingStagingArea;
+    currentRobotState = PlacingStagingArea;
     break;
   case NUM_9:
-    robotState = RemovingStagingArea;
+    currentRobotState = RemovingStagingArea;
     break;
   default:
     return false;
@@ -298,38 +298,59 @@ void loop() {
   if(!batteryCheck()) return;
   sonar.update(); //Update Sonar
   checkRemote();
-  switch(robotState)
+  switch(currentRobotState)
   {
-    case Idle:
-      break;
     case Manual:
       manual();
       break;
+    case Initializing:
+      if(clampMotor.moveTo(clampOpenLarge)) {
+        currentRobotState = Manual;
+        nextRobotState = ApproachingRoof;
+      }
+      break;
     case ApproachingRoof:
-      approachRoof();
+      if(approachRoof())
+      {
+        if(clampHolding){currentRobotState = PlacingRoof;} 
+        else {currentRobotState = RemovingRoof;}
+      }
       break;
     case PlacingRoof:
       if(placeRoof()) {
         clampHolding = false;
+        currentRobotState = Idle;
       }
       break;
     case RemovingRoof:
       if(removeRoof()) {
         clampHolding = true;
+        currentRobotState = Idle;
+        stop();
       }
       break;
     case ApproachingStagingArea:
-      approachStagingArea();
+      if(approachStagingArea())
+      {
+        if(clampHolding){currentRobotState = PlacingStagingArea;}
+        else currentRobotState = RemovingStagingArea;
+      }
       break;
     case PlacingStagingArea:
       if(placeStagingArea()) {
         clampHolding = false;
+        nextRobotState = RemovingStagingArea;
+        currentRobotState = Idle;
       }
       break;
     case RemovingStagingArea:
       if(removeStagingArea()) {
         clampHolding = true;
+        currentRobotState = Idle;
+        stop();
       }
       break;
   }
+  if(currentRobotState != Manual) blueMotor.safetyCheck();
+  clampMotor.safetyCheck();
 }
