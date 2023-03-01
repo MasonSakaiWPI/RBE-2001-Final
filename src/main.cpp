@@ -219,12 +219,6 @@ void stop()
   blueMotor.setEffort(0);
   clampMotor.setEffort(0);
 }
-/**
- * @brief Checks the remote for the last button pressed and facilitates the respective action
- * 
- * @return true if a successfull button press was recieved
- * @return false otherwise
- */
 
 int linesPassed = -1;
 byte turnState = 0;
@@ -263,6 +257,12 @@ bool turnRight(int linesToPass) {
   
 }
 
+/**
+ * @brief Checks the remote for the last button pressed and facilitates the respective action
+ * 
+ * @return true if a successfull button press was recieved
+ * @return false otherwise
+ */
 bool checkRemote() {
   switch (decoder.getKeyCode())
   {
