@@ -76,11 +76,13 @@ bool batteryCheck() {
  * 
  * @param effort the effort to line follow with
  */
-void followLine(int effort) {
+int followLine(int effort) {
   int left = reflectanceSensor.readLeft();
   int right = reflectanceSensor.readRight();
-  int delta = (left - right) / 30;
-  chassis.setMotorEfforts(effort+delta, effort-delta);
+  int delta = left - right;
+  int turnEffort = delta / 30;
+  chassis.setMotorEfforts(effort+turnEffort, effort-turnEffort);
+  return delta;
 }
 /**
  * @brief Follows a black line on the field until the sonar detects that it is a certain distance away
@@ -217,6 +219,44 @@ void stop()
   blueMotor.setEffort(0);
   clampMotor.setEffort(0);
 }
+
+int linesPassed = -1;
+byte turnState = 0;
+void resetTurn() {
+  turnState = 0;
+  linesPassed = -1;
+}
+bool turnLeft(int linesToPass) {
+  switch (turnState)
+  {
+  case 0: //Startup
+  chassis.setMotorEfforts(-100, 100);
+    turnState = 1;
+  case 1: //Wait for Left to rise
+    reflectanceSensor.updateRightLineState();
+    if(reflectanceSensor.updateLeftLineState() == RISING) {
+      linesPassed++;
+      turnState = 2;
+      if(linesPassed == linesToPass) turnState == 3;
+    }
+    break;
+  case 2: //Wait for Right to lower
+    reflectanceSensor.updateRightLineState();
+    if(reflectanceSensor.updateLeftLineState() == FALLING) turnState = 1;
+    break;
+  case 3:
+    if(abs(followLine(0)) > 20) return false;
+    chassis.setMotorEfforts(0,0);
+    turnState = 4;
+  case 4:
+    return true;
+  }
+  return false;
+}
+bool turnRight(int linesToPass) {
+  
+}
+
 bool checkRemote() {
   switch (decoder.getKeyCode())
   {

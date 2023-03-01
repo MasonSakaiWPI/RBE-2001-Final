@@ -1,9 +1,9 @@
 #include <Arduino.h>
 #include "ReflectanceSensor.h"
 #include <Romi32U4.h>
-#define FARLEFTPIN 22 //Analog 2, sensor 11 (Far Right)
-#define LEFTPIN 21 //Analog 3, sensor 7 (Right)
-#define RIGHTPIN 20 //Analog 4, sensor 3 (Left)
+#define FARRIGHTPIN 22 //Analog 2, sensor 11 (Far Right)
+#define RIGHTPIN 21 //Analog 3, sensor 7 (Right)
+#define LEFTPIN 20 //Analog 4, sensor 3 (Left)
 ReflectanceSensor::ReflectanceSensor()
 {
 }
@@ -14,7 +14,7 @@ ReflectanceSensor::ReflectanceSensor()
  */
 void ReflectanceSensor::setup()
 {
-    pinMode(FARLEFTPIN, INPUT);
+    pinMode(FARRIGHTPIN, INPUT);
     pinMode(LEFTPIN, INPUT); 
     pinMode(RIGHTPIN, INPUT); 
 }
@@ -28,23 +28,43 @@ int ReflectanceSensor::readRight()
     return analogRead(RIGHTPIN);
 }
 /**
- * @brief Reads the value of the far left reflectance sensor
+ * @brief Reads the value of the far right reflectance sensor
  * 
  * @return int the value read
  */
-int ReflectanceSensor::readFarLeft()
+int ReflectanceSensor::readFarRight()
 {
-    return analogRead(FARLEFTPIN);
+    return analogRead(FARRIGHTPIN);
 }
 /**
- * @brief Determines if the far left reflectance sensor is over a line
+ * @brief Determines if the far right reflectance sensor is over a line
  * 
  * @return true if it is over a black line
  * @return false if it isn't over a black line
  */
-bool ReflectanceSensor::farLeftOverLine()
+bool ReflectanceSensor::farRightOverLine()
 {
-    return readFarLeft() > 600;
+    return readFarRight() > LineThreshold;
+}
+/**
+ * @brief Determines if the far right reflectance sensor is over a line
+ * 
+ * @return true if it is over a black line
+ * @return false if it isn't over a black line
+ */
+bool ReflectanceSensor::rightOverLine()
+{
+    return readRight() > LineThreshold;
+}
+/**
+ * @brief Determines if the far right reflectance sensor is over a line
+ * 
+ * @return true if it is over a black line
+ * @return false if it isn't over a black line
+ */
+bool ReflectanceSensor::leftOverLine()
+{
+    return readLeft() > LineThreshold;
 }
 /**
  * @brief Reads the value of the left reflectance sensor
@@ -54,4 +74,30 @@ bool ReflectanceSensor::farLeftOverLine()
 int ReflectanceSensor::readLeft()
 {
     return analogRead(LEFTPIN);
+}
+
+
+byte ReflectanceSensor::updateLeftLineState() {
+  if(leftOverLine()) {
+    if(leftState == LOW || leftState == FALLING) return (leftState = RISING);
+    if(leftState == HIGH || leftState == RISING) return (leftState = HIGH);
+  } else {
+    if(leftState == LOW || leftState == FALLING) return (leftState = LOW);
+    if(leftState == RISING || leftState == HIGH) return (leftState = FALLING);
+  }
+}
+byte ReflectanceSensor::updateRightLineState() {
+  if(rightOverLine()) {
+    if(rightState == LOW || rightState == FALLING) return (rightState = RISING);
+    if(rightState == RISING || rightState == HIGH) return (rightState = HIGH);
+  } else {
+    if(rightState == LOW || rightState == FALLING) return (rightState = LOW);
+    if(rightState == RISING || rightState == HIGH) return (rightState = FALLING);
+  }
+}
+byte ReflectanceSensor::getLeftLineState() {
+    return leftState;
+}
+byte ReflectanceSensor::getRightLineState() {
+    return rightState;
 }
