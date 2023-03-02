@@ -95,12 +95,7 @@ int followEncoders(int effort, long leftStart, long rightStart) {
   long leftDelta = chassis.getLeftEncoderCount() - leftStart;
   long rightDelta = chassis.getRightEncoderCount() - rightStart;
   long deltaDelta = rightDelta - leftDelta;
-  Serial.print(leftDelta);
-  Serial.print(", ");
-  Serial.print(rightDelta);
-  Serial.print(", ");
-  Serial.println(deltaDelta);
-  int turnEffort = deltaDelta / 30;
+  int turnEffort = deltaDelta;
   chassis.setMotorEfforts(effort + turnEffort, effort - turnEffort);
   return deltaDelta;
 }
@@ -248,7 +243,7 @@ bool placeRoof()
   }
   else if (roofState == 25)
   {
-    return blueMotor.moveTo(target25 && clampMotor.moveTo(clampOpenLarge));
+    return blueMotor.moveTo(target25) && clampMotor.moveTo(clampOpenLarge);
   }
   else
   {
@@ -452,7 +447,6 @@ bool departStagingArea()
   case 0:
     if(blueMotor.getPosition() > target45 + 200) {
       blueMotor.moveTo(target45);
-      Serial.println(blueMotor.getPosition());
     } else {
       blueMotor.setEffort(0);
       departState++;
@@ -720,7 +714,7 @@ void loop()
       clampHolding = false;
       currentRobotState = DepartingRoof;
       stop();
-      Serial.println("Moving from PlacingRoof to Idle");
+      Serial.println("Moving from PlacingRoof to DepartingRoof");
       Serial.println("Now Not Holding");
       Serial.println();
     }
