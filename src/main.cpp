@@ -88,6 +88,7 @@ bool batteryCheck()
  * @brief Follows a black line on the field with a certain effort
  *
  * @param effort the effort to line follow with
+ * @return delta the delta between the two reflectance sensor readings (right-left)
  */
 int followLine(int effort)
 {
