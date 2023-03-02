@@ -126,6 +126,10 @@ void BlueMotor::setEffort(int effort, bool clockwise)
     OCR1C = constrain(effort, 0, 400);
 }
 
+/**
+ * @brief Stops the motor if the position of it ends up outside of normal operating range
+ * 
+ */
 void BlueMotor::safetyCheck() {
     long pos = getPosition();
     if(pos > 50) setEffort(0);

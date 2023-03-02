@@ -35,8 +35,8 @@ enum currentRobotStates
   RemovingRoof,
   PlacingStagingArea,
   RemovingStagingArea,
-  DepartRoof,
-  DepartStagingArea,
+  DepartingRoof,
+  DepartingStagingArea,
   SwitchSides
 };
 int currentRobotState;
@@ -92,6 +92,7 @@ bool batteryCheck()
  * @brief Follows a black line on the field with a certain effort
  *
  * @param effort the effort to line follow with
+ * @return delta the delta between the two reflectance sensor readings (right-left)
  */
 int followLine(int effort)
 {
@@ -592,7 +593,7 @@ void checkRemote()
     break;
 
   case NUM_1:
-    currentRobotState = DepartStagingArea;
+    currentRobotState = DepartingStagingArea;
     Serial.println("Override to departStagingArea");
     Serial.println();
     break;
@@ -703,7 +704,7 @@ void loop()
     if (placeRoof())
     {
       clampHolding = false;
-      currentRobotState = DepartRoof;
+      currentRobotState = DepartingRoof;
       stop();
       Serial.println("Moving from PlacingRoof to Idle");
       Serial.println("Now Not Holding");
@@ -715,26 +716,26 @@ void loop()
     {
       resume = false;
       clampHolding = true;
-      currentRobotState = DepartRoof;
+      currentRobotState = DepartingRoof;
       stop();
-      Serial.println("Moving from RemovingRoof to DepartRoof");
+      Serial.println("Moving from RemovingRoof to DepartingRoof");
       Serial.println("Now Holding");
       Serial.println();
     }
     break;
-  case DepartRoof:
+  case DepartingRoof:
     if (departRoof())
     {
       if (clampHolding)
       {
         currentRobotState = ApproachingStagingArea;
-        Serial.println("Moving from DepartRoof to ApproachingStagingArea");
+        Serial.println("Moving from DepartingRoof to ApproachingStagingArea");
         Serial.println();
       }
       else
       {
         currentRobotState = SwitchSides;
-        Serial.println("Moving from DepartRoof to SwitchSides");
+        Serial.println("Moving from DepartingRoof to SwitchSides");
         Serial.println();
       }
     }
@@ -773,18 +774,18 @@ void loop()
     if (removeStagingArea())
     {
       clampHolding = true;
-      currentRobotState = DepartStagingArea;
+      currentRobotState = DepartingStagingArea;
       stop();
-      Serial.println("Moving from RemovingStagingArea to DepartStagingArea");
+      Serial.println("Moving from RemovingStagingArea to DepartingStagingArea");
       Serial.println("Now Holding");
       Serial.println();
     }
     break;
-  case DepartStagingArea:
+  case DepartingStagingArea:
     if (departStagingArea())
     {
       currentRobotState = ApproachingRoof;
-      Serial.println("Moving from DepartStagingArea to ApproachingRoof");
+      Serial.println("Moving from DepartingStagingArea to ApproachingRoof");
       Serial.println();
     }
     break;
