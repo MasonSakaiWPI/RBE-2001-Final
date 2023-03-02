@@ -35,8 +35,8 @@ enum currentRobotStates
   RemovingRoof,
   PlacingStagingArea,
   RemovingStagingArea,
-  DepartRoof,
-  DepartStagingArea
+  DepartingRoof,
+  DepartingStagingArea
 };
 int currentRobotState;
 int nextRobotState;
@@ -643,7 +643,7 @@ void loop()
     if (placeRoof())
     {
       clampHolding = false;
-      currentRobotState = DepartRoof;
+      currentRobotState = DepartingRoof;
       stop();
       Serial.println("Moving from PlacingRoof to Idle");
       Serial.println("Now Not Holding");
@@ -655,26 +655,26 @@ void loop()
     {
       resume = false;
       clampHolding = true;
-      currentRobotState = DepartRoof;
+      currentRobotState = DepartingRoof;
       stop();
-      Serial.println("Moving from RemovingRoof to DepartRoof");
+      Serial.println("Moving from RemovingRoof to DepartingRoof");
       Serial.println("Now Holding");
       Serial.println();
     }
     break;
-  case DepartRoof:
+  case DepartingRoof:
     if (departRoof())
     {
       if (clampHolding)
       {
         currentRobotState = ApproachingStagingArea;
-        Serial.println("Moving from DepartRoof to ApproachingStagingArea");
+        Serial.println("Moving from DepartingRoof to ApproachingStagingArea");
         Serial.println();
       }
       else
       {
         currentRobotState = Idle; // Crossing
-        Serial.println("Moving from DepartRoof to Idle");
+        Serial.println("Moving from DepartingRoof to Idle");
         Serial.println();
       }
     }
@@ -713,18 +713,18 @@ void loop()
     if (removeStagingArea())
     {
       clampHolding = true;
-      currentRobotState = DepartStagingArea;
+      currentRobotState = DepartingStagingArea;
       stop();
-      Serial.println("Moving from RemovingStagingArea to DepartStagingArea");
+      Serial.println("Moving from RemovingStagingArea to DepartingStagingArea");
       Serial.println("Now Holding");
       Serial.println();
     }
     break;
-  case DepartStagingArea:
+  case DepartingStagingArea:
     if (departStagingArea())
     {
       currentRobotState = ApproachingRoof;
-      Serial.println("Moving from DepartStagingArea to ApproachingRoof");
+      Serial.println("Moving from DepartingStagingArea to ApproachingRoof");
       Serial.println();
     }
     break;
