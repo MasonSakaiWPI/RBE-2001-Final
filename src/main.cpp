@@ -176,8 +176,9 @@ bool approachRoof()
   else
   {
     Serial.println("Invalid Roof State Set");
+    return false;
   }
-  return false;
+  
 }
 /**
  * @brief Method that is continously run when the robot is in the "ApproachingStagingArea" state
