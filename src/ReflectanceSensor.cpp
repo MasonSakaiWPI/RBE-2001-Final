@@ -14,9 +14,9 @@ ReflectanceSensor::ReflectanceSensor()
  */
 void ReflectanceSensor::setup()
 {
-    pinMode(FARRIGHTPIN, INPUT);
-    pinMode(LEFTPIN, INPUT); 
-    pinMode(RIGHTPIN, INPUT); 
+  pinMode(FARRIGHTPIN, INPUT);
+  pinMode(LEFTPIN, INPUT); 
+  pinMode(RIGHTPIN, INPUT); 
 }
 /**
  * @brief Reads the value of the right reflectance sensor
@@ -25,7 +25,7 @@ void ReflectanceSensor::setup()
  */
 int ReflectanceSensor::readRight()
 {
-    return analogRead(RIGHTPIN);
+  return analogRead(RIGHTPIN);
 }
 /**
  * @brief Reads the value of the far right reflectance sensor
@@ -34,7 +34,7 @@ int ReflectanceSensor::readRight()
  */
 int ReflectanceSensor::readFarRight()
 {
-    return analogRead(FARRIGHTPIN);
+  return analogRead(FARRIGHTPIN);
 }
 /**
  * @brief Determines if the far right reflectance sensor is over a line
@@ -44,7 +44,7 @@ int ReflectanceSensor::readFarRight()
  */
 bool ReflectanceSensor::farRightOverLine()
 {
-    return readFarRight() > LineThreshold;
+  return readFarRight() > LineThreshold;
 }
 /**
  * @brief Determines if the far right reflectance sensor is over a line
@@ -54,7 +54,7 @@ bool ReflectanceSensor::farRightOverLine()
  */
 bool ReflectanceSensor::rightOverLine()
 {
-    return readRight() > LineThreshold;
+  return readRight() > LineThreshold;
 }
 /**
  * @brief Determines if the far right reflectance sensor is over a line
@@ -64,7 +64,7 @@ bool ReflectanceSensor::rightOverLine()
  */
 bool ReflectanceSensor::leftOverLine()
 {
-    return readLeft() > LineThreshold;
+  return readLeft() > LineThreshold;
 }
 /**
  * @brief Reads the value of the left reflectance sensor
@@ -73,7 +73,7 @@ bool ReflectanceSensor::leftOverLine()
  */
 int ReflectanceSensor::readLeft()
 {
-    return analogRead(LEFTPIN);
+  return analogRead(LEFTPIN);
 }
 
 
