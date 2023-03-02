@@ -84,11 +84,11 @@ int followLine(int effort) {
   return delta;
 }
 /**
- * @brief 
+ * @brief Follows a black line of the field for a certain distance (measured with encoder ticks)
  * 
- * @param encoderTicks 
- * @return true 
- * @return false 
+ * @param encoderTicks the amount of encoder ticks to move
+ * @return true if the movement has been completed
+ * @return false if the movement is still being attempted
  */
 bool followLineDistance(long encoderTicks)
 {
@@ -164,21 +164,6 @@ bool approachStagingArea()
   return blueMotor.moveTo(targetSonar) && followLineWithSonar(clampHolding ? sonarDropoff : sonarPickup);
 }
 
-void setup() {
-  Serial.begin(9600);
-  
-  chassis.init();
-
-  decoder.init();
-  sonar.setup();
-  blueMotor.setup();
-  clampMotor.setup();
-
-  reflectanceSensor.setup();
-
-  sonar.start();
-  currentRobotState = Initializing; //initial state
-}
 /**
  * @brief Method that is continously run when the robot is in the "PlacingStagingArea" state
  * This method moves the robot using the field lines towards the staging area
@@ -214,8 +199,8 @@ bool placeRoof()
   return false;
 }
 /**
- * @brief 
- * 
+ * @brief Method that is continiously run when the robot is in the "RemovingRoof" state
+ * This method remvoes the collector from the roof 
  * @return true 
  * @return false 
  */
@@ -232,6 +217,10 @@ void manual()
   if(blueMotorPosMode) blueMotor.moveTo(0);
   else blueMotor.setEffort(bme);
 }
+/**
+ * @brief Stops all actions being performed on the robot. Halts all motors
+ * 
+ */
 void stop()
 {
   chassis.setMotorEfforts(0, 0);
@@ -311,6 +300,12 @@ bool turnRight(int linesToPass) {
 }
 
 byte departState = 0;
+/**
+ * @brief Method that is run when the robot is in the "DepartingRoof" state
+ * Departs the house and orients/prepares the robot to approach the staging area
+ * @return true if the action is complete
+ * @return false if the action is still being performed
+ */
 bool departRoof() {
   static long encoderStart = 0;
   switch (departState)
@@ -350,6 +345,12 @@ bool departRoof() {
   }
   return false;
 }
+/**
+ * @brief Method that is run when the robot is in the "DepartingStagingArea" state
+ * Departs the house and orients/prepares the robot to approach the house
+ * @return true if the action is complete
+ * @return false if the action is still being performed
+ */
 bool departStagingArea() {
   static long encoderStart = 0;
   switch (departState)
@@ -490,7 +491,29 @@ bool checkRemote() {
   }
   return true;
 }
+/**
+ * @brief Microcontroller Setup Function. This method is run once on startup.
+ * 
+ */
+void setup() {
+  Serial.begin(9600);
+  
+  chassis.init();
 
+  decoder.init();
+  sonar.setup();
+  blueMotor.setup();
+  clampMotor.setup();
+
+  reflectanceSensor.setup();
+
+  sonar.start();
+  currentRobotState = Initializing; //initial state
+}
+/**
+ * @brief Main robot loop
+ * 
+ */
 void loop() {
   if(!batteryCheck()) return;
   sonar.update(); //Update Sonar
