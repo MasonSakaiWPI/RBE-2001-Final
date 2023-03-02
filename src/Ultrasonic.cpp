@@ -82,6 +82,6 @@ void Ultrasonic::update() {
 /**
  * @brief Gets the last recorded distance of the sonar
  * 
- * @return The distance in unknown units (presumably cm)
+ * @return The distance in cm
 */
 float Ultrasonic::getDistance() { return distance; }
