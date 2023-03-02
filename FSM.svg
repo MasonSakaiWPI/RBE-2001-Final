@@ -1,0 +1,53 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "https://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+
+<svg width="800" height="600" version="1.1" xmlns="http://www.w3.org/2000/svg">
+	<ellipse stroke="black" stroke-width="1" fill="none" cx="87.5" cy="435.5" rx="30" ry="30"/>
+	<text x="71.5" y="441.5" font-family="Times New Roman" font-size="20">Idle</text>
+	<ellipse stroke="black" stroke-width="1" fill="none" cx="87.5" cy="543.5" rx="30" ry="30"/>
+	<text x="51.5" y="549.5" font-family="Times New Roman" font-size="20">Initialize</text>
+	<ellipse stroke="black" stroke-width="1" fill="none" cx="180.5" cy="230.5" rx="30" ry="30"/>
+	<text x="121.5" y="236.5" font-family="Times New Roman" font-size="20">ApproachRoof</text>
+	<ellipse stroke="black" stroke-width="1" fill="none" cx="266.5" cy="120.5" rx="30" ry="30"/>
+	<text x="213.5" y="126.5" font-family="Times New Roman" font-size="20">RemoveRoof</text>
+	<ellipse stroke="black" stroke-width="1" fill="none" cx="266.5" cy="307.5" rx="30" ry="30"/>
+	<text x="224.5" y="313.5" font-family="Times New Roman" font-size="20">PlaceRoof</text>
+	<ellipse stroke="black" stroke-width="1" fill="none" cx="345.5" cy="230.5" rx="30" ry="30"/>
+	<text x="298.5" y="236.5" font-family="Times New Roman" font-size="20">DepartRoof</text>
+	<ellipse stroke="black" stroke-width="1" fill="none" cx="418.5" cy="338.5" rx="30" ry="30"/>
+	<text x="329.5" y="344.5" font-family="Times New Roman" font-size="20">ApproachStagingArea</text>
+	<ellipse stroke="black" stroke-width="1" fill="none" cx="255.5" cy="537.5" rx="30" ry="30"/>
+	<text x="178.5" y="543.5" font-family="Times New Roman" font-size="20">DepartStagingArea</text>
+	<ellipse stroke="black" stroke-width="1" fill="none" cx="325.5" cy="447.5" rx="30" ry="30"/>
+	<text x="253.5" y="453.5" font-family="Times New Roman" font-size="20">PlaceStagingArea</text>
+	<ellipse stroke="black" stroke-width="1" fill="none" cx="501.5" cy="447.5" rx="30" ry="30"/>
+	<text x="415.5" y="453.5" font-family="Times New Roman" font-size="20">RemoveStaging Area</text>
+	<ellipse stroke="black" stroke-width="1" fill="none" cx="445.5" cy="133.5" rx="30" ry="30"/>
+	<text x="389.5" y="139.5" font-family="Times New Roman" font-size="20">CrossingField</text>
+	<polygon stroke="black" stroke-width="1" points="87.5,513.5 87.5,465.5"/>
+	<polygon fill="black" stroke-width="1" points="87.5,465.5 82.5,473.5 92.5,473.5"/>
+	<polygon stroke="black" stroke-width="1" points="99.894,408.18 168.106,257.82"/>
+	<polygon fill="black" stroke-width="1" points="168.106,257.82 160.248,263.04 169.354,267.171"/>
+	<polygon stroke="black" stroke-width="1" points="198.978,206.866 248.022,144.134"/>
+	<polygon fill="black" stroke-width="1" points="248.022,144.134 239.156,147.357 247.034,153.516"/>
+	<polygon stroke="black" stroke-width="1" points="202.85,250.511 244.15,287.489"/>
+	<polygon fill="black" stroke-width="1" points="244.15,287.489 241.525,278.427 234.854,285.877"/>
+	<polygon stroke="black" stroke-width="1" points="284,144.867 328,206.133"/>
+	<polygon fill="black" stroke-width="1" points="328,206.133 327.395,196.718 319.272,202.552"/>
+	<polygon stroke="black" stroke-width="1" points="287.983,286.56 324.017,251.44"/>
+	<polygon fill="black" stroke-width="1" points="324.017,251.44 314.798,253.443 321.778,260.604"/>
+	<polygon stroke="black" stroke-width="1" points="362.3,255.355 401.7,313.645"/>
+	<polygon fill="black" stroke-width="1" points="401.7,313.645 401.362,304.217 393.078,309.817"/>
+	<polygon stroke="black" stroke-width="1" points="248.38,508.357 187.62,259.643"/>
+	<polygon fill="black" stroke-width="1" points="187.62,259.643 184.661,268.601 194.375,266.228"/>
+	<polygon stroke="black" stroke-width="1" points="436.675,362.368 483.325,423.632"/>
+	<polygon fill="black" stroke-width="1" points="483.325,423.632 482.457,414.238 474.501,420.296"/>
+	<polygon stroke="black" stroke-width="1" points="473.326,457.807 283.674,527.193"/>
+	<polygon fill="black" stroke-width="1" points="283.674,527.193 292.905,529.14 289.469,519.748"/>
+	<polygon stroke="black" stroke-width="1" points="399.028,361.322 344.972,424.678"/>
+	<polygon fill="black" stroke-width="1" points="344.972,424.678 353.968,421.837 346.361,415.347"/>
+	<polygon stroke="black" stroke-width="1" points="307.082,471.181 273.918,513.819"/>
+	<polygon fill="black" stroke-width="1" points="273.918,513.819 282.777,510.574 274.883,504.435"/>
+	<polygon stroke="black" stroke-width="1" points="367.034,209.612 423.966,154.388"/>
+	<polygon fill="black" stroke-width="1" points="423.966,154.388 414.743,156.369 421.705,163.547"/>
+</svg>
