@@ -28,7 +28,7 @@ enum robotStates {Idle, ApproachingRoof, ApproachingStagingArea, PlacingRoof, Re
 int robotState;
 int roofState = 45; //this stores which side of the field the robot is on based on the roof angle
 
-int clampPos = 300, //Clamp target position
+int clampPos = 0, //Clamp target position
     blueMotorPos = 0; //Blue Motor target position
 float bme = 0; //Blue motor manual effort
 
@@ -70,6 +70,8 @@ bool checkRemote() {
     Serial.println(blueMotor.getPosition());
     Serial.print("Clamp Linear Pot: ");
     Serial.println(clampMotor.getPosition());
+    Serial.print("Clamp Has Plate: ");
+    Serial.println(clampMotor.grabbedPlate());
     Serial.print("Sonar Dist: ");
     Serial.println(sonar.getDistance());
     Serial.print("Line: ");
@@ -79,16 +81,13 @@ bool checkRemote() {
     break;
 
   case NUM_1:
-    clampPos = 0;
+    clampPos = -200; //245
     break;
   case NUM_2:
-    clampPos = 80;
+    clampPos = 0; //283; 280 stuck
     break;
   case NUM_3:
-    clampPos = 300;
-    break;
-  case NUM_0_10:
-    clampPos = 700;
+    clampPos = 350; //345
     break;
     
   case LEFT_ARROW:
@@ -133,7 +132,7 @@ bool batteryCheck() {
   if(readBatteryMillivolts() < 6500 && readBatteryMillivolts() > 5000) {
     Serial.println(readBatteryMillivolts());
     blueMotor.setEffort(0);
-    clampMotor.setEffort(0);
+    clampMotor.reset();
     tone(6, 500);
     return false;
   }
@@ -202,7 +201,7 @@ bool approachRoof()
   {
     return followLineWithSonar(sonar45);
   }
-  else if(roofState = 25)
+  else if(roofState == 25)
   {
     return followLineWithSonar(sonar25);
   }
@@ -253,25 +252,10 @@ void loop() {
   if(!batteryCheck()) return;
   sonar.update(); //Update Sonar
   checkRemote();
-  //followLine(100);
-  if(approachRoofTest) {approachRoof();}
-  else{
-    chassis.setMotorEfforts(0,0);
-  }
-  switch(robotState)
-  {
-    case Idle: //waiting for IR remote command
-    break;
-    case ApproachingRoof:
-    break;
-  }
 
   //temp here for manual control of the arm
   // Clamp move to
-  if(clampMotor.moveTo(clampPos) == 2) {
-    Serial.println(clampMotor.getPosition());
-    clampPos = clampMotor.getPosition();
-  }
+  clampMotor.moveTo(clampPos);
 
   //Swaps between move to and direct effort control
   if(blueMotorPosMode) blueMotor.moveTo(blueMotorPos);
