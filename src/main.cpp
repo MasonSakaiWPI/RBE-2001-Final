@@ -36,10 +36,12 @@ enum currentRobotStates
   PlacingStagingArea,
   RemovingStagingArea,
   DepartRoof,
-  DepartStagingArea
+  DepartStagingArea,
+  SwitchSides
 };
 int currentRobotState;
 int nextRobotState;
+byte departState = 0;
 int roofState = 45; // this stores which side of the field the robot is on based on the roof angle
 bool resume = false;
 
@@ -54,11 +56,13 @@ const long target45 = -1480, // 45d position
     target25Hover = -2500,   // raises plate
     targetSonar = -1700,     // min for clear of sonar
     targetStagingArea = 0;
-const float sonarDropoff = 9.3,
+const float sonarDropoff = 9.8,
             sonarPickup = 15,
-            sonar45 = 13.75,
+            sonar45 = 13.5,
             sonar45Depart = 17,
-            sonar25 = 8.3;
+            sonar25 = 8.3,
+            sonar25Depart = 10,
+            sonarSwitch = 7;
 const int clampClosed = 70,
           clampOpenSmall = 300,
           clampOpenLarge = 1000;
@@ -207,7 +211,10 @@ bool placeStagingArea()
  */
 bool removeStagingArea()
 {
-  return clampMotor.moveTo(clampClosed) && blueMotor.moveTo(targetSonar);
+  if(clampMotor.moveTo(clampClosed))
+    return blueMotor.moveTo(targetSonar);
+  blueMotor.setEffort(0);
+  return false;
 }
 
 /**
@@ -242,11 +249,21 @@ bool removeRoof()
 {
   if (roofState == 45)
   {
-    return clampMotor.moveTo(clampClosed) && resume && blueMotor.moveTo(target45Hover);
+    if(clampMotor.moveTo(clampClosed)) {
+      return resume && blueMotor.moveTo(target45Hover);
+    } else {
+      blueMotor.setEffort(0);
+      return false;
+    }
   }
   else if (roofState == 25)
   {
-    return clampMotor.moveTo(clampClosed) && resume && blueMotor.moveTo(target25Hover);
+    if(clampMotor.moveTo(clampClosed)) {
+      return resume && blueMotor.moveTo(target25Hover);
+    } else {
+      blueMotor.setEffort(0);
+      return false;
+    }
   }
   else
   {
@@ -355,7 +372,6 @@ bool turnRight(int linesToPass)
   return false;
 }
 
-byte departState = 0;
 /**
  * @brief Method that is run when the robot is in the "DepartingRoof" state
  * Departs the house and orients/prepares the robot to approach the staging area
@@ -368,7 +384,7 @@ bool departRoof()
   switch (departState)
   {
   case 0: // Back Up
-    if (followLineWithSonar(sonar45Depart))
+    if (followLineWithSonar((roofState == 45) ? sonar45Depart : sonar25Depart))
     {
       departState = 1;
     }
@@ -395,7 +411,7 @@ bool departRoof()
     }
     break;
   case 4: // Turn
-    if (turnRight(0))
+    if (roofState == 45 ? turnRight(0) : turnLeft(0))
     {
       resetTurn();
       departState = 5;
@@ -419,7 +435,7 @@ bool departStagingArea()
   switch (departState)
   {
   case 0: // turn around
-    if (turnLeft(0))
+    if (turnRight(0))
     {
       resetTurn();
       departState++;
@@ -440,7 +456,7 @@ bool departStagingArea()
     }
     break;
   case 3: // Turn
-    if (turnLeft(0))
+    if (roofState == 45 ? turnLeft(0) : turnRight(0))
     {
       resetTurn();
       departState++;
@@ -454,12 +470,61 @@ bool departStagingArea()
 }
 
 /**
+ * 
+*/
+bool switchSides() {
+  static long encoderStart = 0;
+  switch (departState)
+  {
+  case 0: //approach Block
+    if(followLineWithSonar(sonarSwitch)) {
+      departState++;
+    }
+    break;
+  case 1:
+    
+    if(roofState == 45 ? turnLeft(0) : turnRight(0)) {
+      resetTurn();
+      departState++;
+      chassis.setMotorEfforts(-70, -70);
+    }
+    break;
+  case 2:
+    if(reflectanceSensor.farRightOverLine()) {
+      departState++;
+      encoderStart = chassis.getLeftEncoderCount();
+    }
+    break;
+  case 3:
+    if (followLineDistance(encoderStart - 650))
+    {
+      departState++;
+    }
+    break;
+  case 4:
+    if(followLineWithSonar(0)) {
+      departState++;
+      if(roofState == 45) chassis.turnFor(-90, 70, false);
+      else chassis.turnFor(90, 70, false);
+    }
+    break;
+  case 5:
+    if(roofState == 45 ? turnLeft(0) : turnRight(0)) {
+      resetTurn();
+      departState++;
+    }
+    break;
+  }
+  return false;
+}
+
+/**
  * @brief Checks the remote for the last button pressed and facilitates the respective action
  *
  * @return true if a successfull button press was recieved
  * @return false otherwise
  */
-bool checkRemote()
+void checkRemote()
 {
   switch (decoder.getKeyCode())
   {
@@ -527,8 +592,8 @@ bool checkRemote()
     break;
 
   case NUM_1:
-    currentRobotState = ApproachingRoof;
-    Serial.println("Override to ApproachingRoof");
+    currentRobotState = DepartStagingArea;
+    Serial.println("Override to departStagingArea");
     Serial.println();
     break;
   case NUM_4:
@@ -556,10 +621,7 @@ bool checkRemote()
     Serial.println("Override to RemovingStagingArea");
     Serial.println();
     break;
-  default:
-    return false;
   }
-  return true;
 }
 /**
  * @brief Microcontroller Setup Function. This method is run once on startup.
@@ -671,8 +733,8 @@ void loop()
       }
       else
       {
-        currentRobotState = Idle; // Crossing
-        Serial.println("Moving from DepartRoof to Idle");
+        currentRobotState = SwitchSides;
+        Serial.println("Moving from DepartRoof to SwitchSides");
         Serial.println();
       }
     }
@@ -726,6 +788,13 @@ void loop()
       Serial.println();
     }
     break;
+    case SwitchSides:
+      if(true || switchSides()) {
+        currentRobotState = Idle;
+        stop();
+        Serial.println("Moving from SwitchSides to Idle");
+        Serial.println();
+      }
   }
   if (currentRobotState != Manual)
     blueMotor.safetyCheck();

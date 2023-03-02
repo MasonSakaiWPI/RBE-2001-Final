@@ -129,7 +129,7 @@ void BlueMotor::setEffort(int effort, bool clockwise)
 void BlueMotor::safetyCheck() {
     long pos = getPosition();
     if(pos > 50) setEffort(0);
-    else if (pos < -2700) setEffort(0);
+    else if (pos < -3700) setEffort(0);
 }
 
 /**
