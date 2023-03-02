@@ -39,7 +39,7 @@ enum currentRobotStates
   DepartingStagingArea,
   SwitchSides
 };
-int currentRobotState;
+int currentRobotState = Initializing;
 int nextRobotState;
 byte departState = 0;
 int roofState = 45; // this stores which side of the field the robot is on based on the roof angle
@@ -62,7 +62,7 @@ const float sonarDropoff = 9.8,
             sonar45Depart = 17,
             sonar25 = 8.3,
             sonar25Depart = 10,
-            sonarSwitch = 7;
+            sonarSwitch = 5;
 const int clampClosed = 70,
           clampOpenSmall = 300,
           clampOpenLarge = 1000;
@@ -87,6 +87,22 @@ bool batteryCheck()
   }
   noTone(6);
   return true;
+}
+/**
+ * 
+*/
+int followEncoders(int effort, long leftStart, long rightStart) {
+  long leftDelta = chassis.getLeftEncoderCount() - leftStart;
+  long rightDelta = chassis.getRightEncoderCount() - rightStart;
+  long deltaDelta = rightDelta - leftDelta;
+  Serial.print(leftDelta);
+  Serial.print(", ");
+  Serial.print(rightDelta);
+  Serial.print(", ");
+  Serial.println(deltaDelta);
+  int turnEffort = deltaDelta / 30;
+  chassis.setMotorEfforts(effort + turnEffort, effort - turnEffort);
+  return deltaDelta;
 }
 /**
  * @brief Follows a black line on the field with a certain effort
@@ -415,12 +431,10 @@ bool departRoof()
     if (roofState == 45 ? turnRight(0) : turnLeft(0))
     {
       resetTurn();
-      departState = 5;
+      departState = 0;
+      return true;
     }
     break;
-  case 5: // Done
-    departState = 0;
-    return true;
   }
   return false;
 }
@@ -435,14 +449,25 @@ bool departStagingArea()
   static long encoderStart = 0;
   switch (departState)
   {
-  case 0: // turn around
+  case 0:
+    if(blueMotor.getPosition() > target45 + 200) {
+      blueMotor.moveTo(target45);
+      Serial.println(blueMotor.getPosition());
+    } else {
+      blueMotor.setEffort(0);
+      departState++;
+      if(sonar.getDistance() > 50) departState++;
+      Serial.println(departState);
+    }
+    break;
+  case 1: // turn around
     if (turnRight(0))
     {
       resetTurn();
       departState++;
     }
     break;
-  case 1: // Line follow to black line
+  case 2: // Line follow to black line
     followLine(-70);
     if (reflectanceSensor.farRightOverLine())
     {
@@ -450,22 +475,21 @@ bool departStagingArea()
       encoderStart = chassis.getLeftEncoderCount();
     }
     break;
-  case 2: // Line follow set distance (encoder)
+  case 3: // Line follow set distance (encoder)
     if (followLineDistance(encoderStart - 650))
     {
       departState++;
     }
     break;
-  case 3: // Turn
+  case 4: // Turn
     if (roofState == 45 ? turnLeft(0) : turnRight(0))
     {
       resetTurn();
       departState++;
+      departState = 0;
+      return true;
     }
     break;
-  case 4: // Done
-    departState = 0;
-    return true;
   }
   return false;
 }
@@ -474,45 +498,47 @@ bool departStagingArea()
  * 
 */
 bool switchSides() {
-  static long encoderStart = 0;
+  static long leftEncoderStart = 0;
+  static long rightEncoderStart = 0;
   switch (departState)
   {
   case 0: //approach Block
     if(followLineWithSonar(sonarSwitch)) {
       departState++;
-    }
-    break;
-  case 1:
-    
-    if(roofState == 45 ? turnLeft(0) : turnRight(0)) {
-      resetTurn();
-      departState++;
-      chassis.setMotorEfforts(-70, -70);
-    }
-    break;
-  case 2:
-    if(reflectanceSensor.farRightOverLine()) {
-      departState++;
-      encoderStart = chassis.getLeftEncoderCount();
-    }
-    break;
-  case 3:
-    if (followLineDistance(encoderStart - 650))
-    {
-      departState++;
-    }
-    break;
-  case 4:
-    if(followLineWithSonar(0)) {
-      departState++;
       if(roofState == 45) chassis.turnFor(-90, 70, false);
       else chassis.turnFor(90, 70, false);
     }
     break;
-  case 5:
-    if(roofState == 45 ? turnLeft(0) : turnRight(0)) {
+  case 1:
+    if(chassis.checkMotionComplete()) {
       resetTurn();
       departState++;
+      leftEncoderStart = chassis.getLeftEncoderCount();
+      rightEncoderStart = chassis.getRightEncoderCount();
+    }
+    break;
+  case 2:
+    followEncoders(-70, leftEncoderStart, rightEncoderStart);
+    if(reflectanceSensor.farRightOverLine()) {
+      departState++;
+      leftEncoderStart = chassis.getLeftEncoderCount();
+    }
+    break;
+  case 3:
+    if (followLineDistance(leftEncoderStart - 650))
+    {
+      departState++;
+      if(roofState == 45) chassis.setMotorEfforts(80, -80);
+      else chassis.setMotorEfforts(-80, 80);
+    }
+    break;
+  case 4:
+    if(roofState == 45 ? reflectanceSensor.rightOverLine() : reflectanceSensor.leftOverLine()) {
+      chassis.setMotorEfforts(0,0);
+      if(roofState == 45) roofState = 25;
+      else roofState = 45;
+      departState = 0;
+      return true;
     }
     break;
   }
@@ -577,8 +603,11 @@ void checkRemote()
 
   case UP_ARROW:
     currentRobotState = Manual;
+    nextRobotState = currentRobotState;
+    resume = false;
     blueMotorPosMode = false;
     bme = 0;
+    stop();
     Serial.println("Override to Manual");
     Serial.println("blueMotorPosMode is now false");
     Serial.println();
@@ -592,34 +621,19 @@ void checkRemote()
     Serial.println();
     break;
 
-  case NUM_1:
+  case NUM_0_10:
+    roofState = 25;
+    Serial.println("Set Side to 25");
+    Serial.println();
+    break;
+  case REWIND:
+    roofState = 45;
+    Serial.println("Set Side to 45");
+    Serial.println();
+    break;
+  case DOWN_ARROW:
     currentRobotState = DepartingStagingArea;
     Serial.println("Override to departStagingArea");
-    Serial.println();
-    break;
-  case NUM_4:
-    currentRobotState = PlacingRoof;
-    Serial.println("Override to PlacingRoof");
-    Serial.println();
-    break;
-  case NUM_7:
-    currentRobotState = RemovingRoof;
-    Serial.println("Override to RemovingRoof");
-    Serial.println();
-    break;
-  case NUM_3:
-    currentRobotState = ApproachingStagingArea;
-    Serial.println("Override to ApproachingStagingArea");
-    Serial.println();
-    break;
-  case NUM_6:
-    currentRobotState = PlacingStagingArea;
-    Serial.println("Override to PlacingStagingArea");
-    Serial.println();
-    break;
-  case NUM_9:
-    currentRobotState = RemovingStagingArea;
-    Serial.println("Override to RemovingStagingArea");
     Serial.println();
     break;
   }
@@ -790,7 +804,7 @@ void loop()
     }
     break;
     case SwitchSides:
-      if(true || switchSides()) {
+      if(switchSides()) {
         currentRobotState = Idle;
         stop();
         Serial.println("Moving from SwitchSides to Idle");
