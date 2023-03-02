@@ -18,6 +18,9 @@ float distance;
 bool active = false;
 bool pinged = false;
 
+/**
+ * @brief Sends the command to ping to the ultrasonic sensor
+*/
 void ping() {
     pinged = true;
     digitalWrite(pinSonarTrig, HIGH);
@@ -25,6 +28,9 @@ void ping() {
     digitalWrite(pinSonarTrig, LOW);
     sonarWaitStart = micros();
 }
+/**
+ * @brief Interrupt for sonar ping sent and recived
+*/
 void echo() {
     if(digitalRead(pinSonarEcho)) {
         sonarOut = micros();
@@ -36,7 +42,10 @@ void echo() {
     pinged = false;
 }
 
-void Setup() {
+/**
+ * @brief Sets up the pins and interrupt, and pings the sonar once
+*/
+void Ultrasonic::setup() {
   pinMode(12, OUTPUT);
   digitalWrite(12, LOW);
   pinMode(17, INPUT);
@@ -44,22 +53,23 @@ void Setup() {
   attachPCInt(0, echo);
   ping();
 }
-void Ultrasonic::setup() { Setup(); }
 
-void Start() {
-    active = true;
-}
-void Ultrasonic::start() { Start(); }
-void Stop() {
-    active = false;
-}
-void Ultrasonic::stop() { Stop(); }
-bool IsActive() {
-    return active;
-}
-bool Ultrasonic::isActive() { return IsActive(); }
+/**
+ * @brief Starts the sonar
+*/
+void Ultrasonic::start() { active = true; }
+/**
+ * @brief Stops the sonar, will still update the distance if a ping has already been sent
+*/
+void Ultrasonic::stop() { active = false; }
+/**
+ * @brief Gets the active state of the sonar
+ * 
+ * @return true if the sonar is active, false if it is not
+*/
+bool Ultrasonic::isActive() { return active; }
 
-void Update() {
+void Ultrasonic::update() {
     if(active) {
         if(pinged) {
             if(sonarOut + timeoutPeriod <= micros()) ping();
@@ -68,9 +78,10 @@ void Update() {
         }
     } else if (pinged) if(sonarOut + timeoutPeriod <= micros()) pinged = false;
 }
-void Ultrasonic::update() { Update(); }
 
-float GetDistance() {
-    return distance;
-}
-float Ultrasonic::getDistance() { return GetDistance(); }
+/**
+ * @brief Gets the last recorded distance of the sonar
+ * 
+ * @return The distance in unknown units (presumably cm)
+*/
+float Ultrasonic::getDistance() { return distance; }

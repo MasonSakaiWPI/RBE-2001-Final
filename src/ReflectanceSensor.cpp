@@ -76,7 +76,11 @@ int ReflectanceSensor::readLeft()
     return analogRead(LEFTPIN);
 }
 
-
+/**
+ * @brief Determines the state of the left line sensor, includes transitioning states
+ * 
+ * @return The state of the left line sensor, see getLeftLineState for state values
+ */
 byte ReflectanceSensor::updateLeftLineState() {
   if(leftOverLine()) {
     if(leftState == LOW || leftState == FALLING) return (leftState = RISING);
@@ -86,6 +90,11 @@ byte ReflectanceSensor::updateLeftLineState() {
     else return (leftState = FALLING);
   }
 }
+/**
+ * @brief Determines the state of the right line sensor, includes transitioning states
+ * 
+ * @return The state of the left line sensor, see getRightLineState for state values
+ */
 byte ReflectanceSensor::updateRightLineState() {
   if(rightOverLine()) {
     if(rightState == LOW || rightState == FALLING) return (rightState = RISING);
@@ -95,9 +104,25 @@ byte ReflectanceSensor::updateRightLineState() {
     else return (rightState = FALLING);
   }
 }
+/**
+ * @brief Gets the state of the left line sensor, includes transitioning states
+ * 
+ * @returns LOW (0) when not over the line,
+ * @returns HIGH (1) when over the line,
+ * @returns FALLING (2) when LOW and last state was HIGH or RISING, and
+ * @returns RISING (3) when HIGH and last state was LOW or FALLING
+ */
 byte ReflectanceSensor::getLeftLineState() {
     return leftState;
 }
+/**
+ * @brief Gets the state of the right line sensor, includes transitioning states
+ * 
+ * @returns LOW (0) when not over the line,
+ * @returns HIGH (1) when over the line,
+ * @returns FALLING (2) when LOW and last state was HIGH or RISING, and
+ * @returns RISING (3) when HIGH and last state was LOW or FALLING
+ */
 byte ReflectanceSensor::getRightLineState() {
     return rightState;
 }
