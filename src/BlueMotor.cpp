@@ -132,8 +132,8 @@ void BlueMotor::setEffort(int effort, bool clockwise)
  */
 void BlueMotor::safetyCheck() {
     long pos = getPosition();
-    if(pos > 50) setEffort(0);
-    else if (pos < -3700) setEffort(0);
+    if(pos < -50) setEffort(0);
+    else if (pos > 3700) setEffort(0);
 }
 
 /**
@@ -151,10 +151,6 @@ bool BlueMotor::moveTo(long target)
     }
     if(deltaP * kp >= INT16_MAX)       deltaP = INT16_MAX / kp;
     else if (deltaP * kp <= INT16_MIN) deltaP = INT16_MIN / kp;
-    Serial.print(target);
-    Serial.print(", ");
-    Serial.print(getPosition());
-    Serial.print(", ");
-    Serial.println(setEffortWithDeadband(deltaP * kp));
+    setEffortWithDeadband(deltaP * kp);
     return false;
 }

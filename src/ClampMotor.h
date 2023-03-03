@@ -10,7 +10,6 @@ public:
     int getPosition();
     void setup();
     void reset();
-    bool moveToPot(int position);
 
 private:
     const int neutral = 1500,
