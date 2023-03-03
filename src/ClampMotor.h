@@ -1,24 +1,20 @@
 #pragma once
 #include <Servo32u4.h>
 
-const int ADCMAX = 1023;
-
 class ClampMotor
 {
 public:
     ClampMotor();
-    void setEffort(int effort);
-    void setEffortWithDeadband(int effort);
     bool moveTo(int position);
+    bool grabbedPlate();
     int getPosition();
     void setup();
     void reset();
-    void safetyCheck();
+    bool moveToPot(int position);
 
 private:
-    const int tolerance = 8;
-    const int kp = -10;
-    const int Deadband = 300;
-    const int neutral = 1500;
+    const int neutral = 1500,
+              tolerance = 10,
+              grabbedPosition = 280;
     Servo32U4Pin5 servo;
 };

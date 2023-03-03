@@ -81,7 +81,7 @@ bool batteryCheck()
     Serial.println(readBatteryMillivolts());
     chassis.setMotorEfforts(0, 0);
     blueMotor.setEffort(0);
-    clampMotor.setEffort(0);
+    clampMotor.moveTo(100);
     tone(6, 500);
     return false;
   }
@@ -299,7 +299,7 @@ void stop()
 {
   chassis.setMotorEfforts(0, 0);
   blueMotor.setEffort(0);
-  clampMotor.setEffort(0);
+  clampMotor.moveTo(100);
 }
 
 int linesPassed = -1;
@@ -807,5 +807,4 @@ void loop()
   }
   if (currentRobotState != Manual)
     blueMotor.safetyCheck();
-  clampMotor.safetyCheck();
 }
