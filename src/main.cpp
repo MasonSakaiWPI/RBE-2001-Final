@@ -50,22 +50,20 @@ float bme = 0; // Blue motor manual effort
 bool blueMotorPosMode = false, // Use BME (false) or blueMotorPos(true)
     clampHolding = false;
 
-const long target45 = -1480, // 45d position
-    target45Hover = -1700,   // raises plate
-    target25 = -3300,        // 25d position
-    target25Hover = -2500,   // raises plate
-    targetSonar = -1700,     // min for clear of sonar
+const long target45 = 1870, // 45d position
+    target45Hover = 2350,   // raises plate
+    target25 = 2600,        // 25d position
+    target25Hover = 2750,   // raises plate
+    targetSonar = 1250,     // min for clear of sonar
     targetStagingArea = 0;
-const float sonarDropoff = 9.8,
-            sonarPickup = 15,
-            sonar45 = 13.5,
-            sonar45Depart = 17,
-            sonar25 = 8.3,
+const float sonarDropoff = 6.5,
+            sonar45 = 9.9,
+            sonar45Depart = 15,
+            sonar25 = 8.1,
             sonar25Depart = 10,
             sonarSwitch = 5;
-const int clampClosed = 70,
-          clampOpenSmall = 300,
-          clampOpenLarge = 1000;
+const int clampClosed = -100,
+          clampOpen = 250;
 
 /**
  * @brief Determines if the robot's battery level is at a safe level to operate and plays a buzzer tone if they need to be replaced
@@ -202,7 +200,7 @@ bool approachRoof()
  */
 bool approachStagingArea()
 {
-  return blueMotor.moveTo(targetSonar) && followLineWithSonar(clampHolding ? sonarDropoff : sonarPickup);
+  return blueMotor.moveTo(targetSonar) && followLineWithSonar(sonarDropoff);
 }
 
 /**
@@ -213,7 +211,7 @@ bool approachStagingArea()
  */
 bool placeStagingArea()
 {
-  return blueMotor.moveTo(targetStagingArea) && resume && clampMotor.moveTo(clampOpenSmall);
+  return blueMotor.moveTo(targetStagingArea) && resume && clampMotor.moveTo(clampOpen);
 }
 /**
  * @brief Method that is continously run when the robot is in the "RemovingStagingArea" state
@@ -239,11 +237,11 @@ bool placeRoof()
 {
   if (roofState == 45)
   {
-    return blueMotor.moveTo(target45) && clampMotor.moveTo(clampOpenLarge);
+    return blueMotor.moveTo(target45) && clampMotor.moveTo(clampOpen);
   }
   else if (roofState == 25)
   {
-    return blueMotor.moveTo(target25) && clampMotor.moveTo(clampOpenLarge);
+    return blueMotor.moveTo(target25) && clampMotor.moveTo(clampOpen);
   }
   else
   {
@@ -681,7 +679,7 @@ void loop()
     manual();
     break;
   case Initializing:
-    if (clampMotor.moveTo(clampOpenLarge))
+    if (clampMotor.moveTo(clampOpen))
     {
       currentRobotState = Manual;
       nextRobotState = ApproachingRoof;
