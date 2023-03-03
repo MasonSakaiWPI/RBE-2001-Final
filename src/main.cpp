@@ -443,7 +443,7 @@ bool departStagingArea()
   switch (departState)
   {
   case 0:
-    if(blueMotor.getPosition() > target45 + 200) {
+    if(blueMotor.getPosition() < target45 + -200) {
       blueMotor.moveTo(target45);
     } else {
       blueMotor.setEffort(0);

@@ -48,13 +48,15 @@ bool ClampMotor::grabbedPlate()
  */
 bool ClampMotor::moveTo(int target)
 {
-    target = constrain(target, -200, 350);
+    target = constrain(target, -100, 250);
     servo.writeMicroseconds(neutral + target);
-    return false;
+    int potTarget = map(target, 245, 345, -100, 250);
+    return abs(getPosition() - potTarget) < tolerance;
 }
 
 bool ClampMotor::moveToPot(int target)
 {
     int potTarget = map(target, 245, 345, -200, 350);
-    return moveTo(potTarget);
+    servo.writeMicroseconds(neutral + potTarget);
+    return abs(getPosition() - target) < tolerance;
 }
