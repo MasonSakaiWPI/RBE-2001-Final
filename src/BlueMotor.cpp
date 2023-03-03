@@ -123,7 +123,7 @@ void BlueMotor::setEffort(int effort, bool clockwise)
         digitalWrite(AIN1, LOW);
         digitalWrite(AIN2, HIGH);
     }
-    OCR1C = constrain(effort, 0, 400);
+    OCR1C = constrain(effort, 0, 390);
 }
 
 /**
@@ -151,6 +151,10 @@ bool BlueMotor::moveTo(long target)
     }
     if(deltaP * kp >= INT16_MAX)       deltaP = INT16_MAX / kp;
     else if (deltaP * kp <= INT16_MIN) deltaP = INT16_MIN / kp;
-    setEffortWithDeadband(deltaP * kp);
+    Serial.print(target);
+    Serial.print(", ");
+    Serial.print(getPosition());
+    Serial.print(", ");
+    Serial.println(setEffortWithDeadband(deltaP * kp));
     return false;
 }

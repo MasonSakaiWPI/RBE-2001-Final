@@ -15,6 +15,12 @@ public:
 private:
     const int neutral = 1500,
               tolerance = 10,
-              grabbedPosition = 280;
+              grabbedPosition = 277;
     Servo32U4Pin5 servo;
 };
+
+/*
+clampPos = -150; //262
+clampPos = 0; //277 stuck
+clampPos = 250; //335
+*/
