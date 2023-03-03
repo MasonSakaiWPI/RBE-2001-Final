@@ -81,13 +81,13 @@ bool checkRemote() {
     break;
 
   case NUM_1:
-    clampPos = -150; //245
+    clampPos = -150; //262
     break;
   case NUM_2:
-    clampPos = 0; //283; 280 stuck
+    clampPos = 0; //277 stuck
     break;
   case NUM_3:
-    clampPos = 250; //345
+    clampPos = 250; //335
     break;
     
   case LEFT_ARROW:
