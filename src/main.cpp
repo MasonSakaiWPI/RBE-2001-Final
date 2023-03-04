@@ -57,7 +57,7 @@ const long target45 = 1700, // 45d position
     targetSonar = 1500,     // min for clear of sonar
     targetStagingArea = 0;
 const float sonarDropoff = 6.5,
-            sonar45 = 9.6,
+            sonar45 = 9.3,
             sonar45Depart = 15,
             sonar25 = 8.1,
             sonar25Depart = 10,
@@ -237,7 +237,7 @@ bool placeRoof()
 {
   if (roofState == 45)
   {
-    return blueMotor.moveTo(target45) && !clampMotor.moveTo(clampOpen);
+    return blueMotor.moveTo(target45 + 100) && !clampMotor.moveTo(clampOpen);
   }
   else if (roofState == 25)
   {
