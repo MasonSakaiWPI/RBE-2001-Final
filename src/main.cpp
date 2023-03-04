@@ -317,27 +317,25 @@ bool turnLeft(int linesToPass)
 {
   switch (turnState)
   {
-  case 0: // Startup
+  case 0: // Wait for Left to rise
     chassis.setMotorEfforts(-70, 70);
-    turnState = 1;
-  case 1: // Wait for Left to rise
     if (reflectanceSensor.getLeftLineState() == RISING)
     {
       linesPassed++;
-      turnState = 2;
+      turnState = 1;
       if (linesPassed == linesToPass)
-        turnState = 4;
+        turnState = 3;
     }
     break;
-  case 2: // Wait for Right to lower
+  case 1: // Wait for Right to lower
     if (reflectanceSensor.getRightLineState() == FALLING)
-      turnState = 1;
+      turnState = 0;
     break;
-  case 3:
+  case 2:
     if (abs(followLine(0)) > 20)
       return false;
-    turnState = 4;
-  case 4:
+    turnState = 3;
+  case 3:
     chassis.setMotorEfforts(0, 0);
     return true;
   }
@@ -354,27 +352,25 @@ bool turnRight(int linesToPass)
 {
   switch (turnState)
   {
-  case 0: // Startup
+  case 0: // Wait for Right to rise
     chassis.setMotorEfforts(70, -70);
-    turnState = 1;
-  case 1: // Wait for Right to rise
     if (reflectanceSensor.getRightLineState() == RISING)
     {
       linesPassed++;
-      turnState = 2;
+      turnState = 1;
       if (linesPassed == linesToPass)
-        turnState = 4;
+        turnState = 3;
     }
     break;
-  case 2: // Wait for Left to lower
+  case 1: // Wait for Left to lower
     if (reflectanceSensor.getLeftLineState() == FALLING)
-      turnState = 1;
+      turnState = 0;
     break;
-  case 3:
+  case 2:
     if (abs(followLine(0)) > 20)
       return false;
-    turnState = 4;
-  case 4:
+    turnState = 3;
+  case 3:
     chassis.setMotorEfforts(0, 0);
     return true;
   }
@@ -519,11 +515,11 @@ bool switchSides() {
     if (followLineDistance(leftEncoderStart + 650))
     {
       departState++;
-      if(roofState == 45) chassis.setMotorEfforts(80, -80);
-      else chassis.setMotorEfforts(-80, 80);
     }
     break;
   case 4:
+    if(roofState == 45) chassis.setMotorEfforts(80, -80);
+    else chassis.setMotorEfforts(-80, 80);
     if(roofState == 45 ? reflectanceSensor.rightOverLine() : reflectanceSensor.leftOverLine()) {
       chassis.setMotorEfforts(0,0);
       if(roofState == 45) roofState = 25;
