@@ -600,7 +600,8 @@ void checkRemote()
     Serial.println();
     break;
   case STOP_MODE:
-    nextRobotState = currentRobotState;
+    if(currentRobotState != Manual)
+      nextRobotState = currentRobotState;
     currentRobotState = Idle;
     resume = false;
     stop();
