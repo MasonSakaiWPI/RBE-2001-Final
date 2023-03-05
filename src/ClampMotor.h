@@ -16,7 +16,7 @@ public:
     void safetyCheck();
 
 private:
-    const int tolerance = 8;
+    const int tolerance = 25;
     const int kp = -10;
     const int Deadband = 300;
     const int neutral = 1500;

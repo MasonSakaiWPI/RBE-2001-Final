@@ -213,7 +213,7 @@ bool approachStagingArea()
  */
 bool placeStagingArea()
 {
-  return blueMotor.moveTo(targetStagingArea) && resume && clampMotor.moveTo(clampOpenSmall);
+  return blueMotor.moveTo(targetStagingArea) && clampMotor.moveTo(clampOpenSmall);
 }
 /**
  * @brief Method that is continously run when the robot is in the "RemovingStagingArea" state
